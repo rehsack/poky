@@ -1,0 +1,497 @@
+OECONF_BASHRC_VERSION="0.1"
+#!/bin/sh
+
+# OE Build Environment Setup Script
+#
+# Copyright (C) 2006-2011 Linux Foundation
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+#
+# Normally this is called as '. ./oe-init-bashrc'
+#
+# This works in most shells (not dash), but not all of them pass arg1 when
+# being sourced.   To workaround the shell limitation use "set arg1" prior
+# to sourcing this script.
+#
+
+__oe_guess_oeroot() {
+    if [ -n "$BASH_SOURCE" ]; then
+       OEROOT="`dirname $BASH_SOURCE`"
+    elif [ -n "$ZSH_NAME" ]; then
+       OEROOT="`dirname $0`"
+    else
+       OEROOT="`pwd`"
+    fi
+
+    while [ ! $(echo $OEROOT | egrep 'poky$') ]
+    do
+        test -d ${OEROOT}/poky && OEROOT="${OEROOT}/poky" && break
+        OEROOT=`dirname "$OEROOT"`
+    done
+
+    OEROOT=`readlink -f "$OEROOT"`
+    export OEROOT
+}
+
+__oe_guess_bbdir() {
+    BITBAKEDIR="$OEROOT/bitbake$BBEXTRA/"
+    BITBAKEDIR=`readlink -f "$BITBAKEDIR"`
+}
+
+#
+# Nice path functions with slight modifications from:
+#
+#   http://stackoverflow.com/questions/370047/what-is-the-most-elegant-way-to-remove-a-path-from-the-path-variable-in-bash
+#
+__oe_append_path()  { NEW=${1/%\//}; test -d $NEW || return; __oe_remove_path $NEW; export PATH="$PATH:$NEW"; }
+__oe_prepend_path() { NEW=${1/%\//}; test -d $NEW || return; __oe_remove_path $NEW; export PATH="$NEW:$PATH"; }
+__oe_remove_path()  {
+    # New format not supported by some old versions of awk
+    # PATH=`echo -n "$PATH" | awk -v RS=: -v ORS=: '$0 != "'$1'"'`
+    PATH=`echo -n "$PATH" | awk  'BEGIN { RS=":"; ORS=":" } $0 != "'$1'" '`
+    export PATH=${PATH/%:/}
+}
+
+__oe_append_extrawhite() { NEW=${1/%\//}; __oe_remove_extrawhite $NEW; export BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE $NEW"; }
+__oe_prepend_extrawhite() { NEW=${1/%\//}; __oe_remove_extrawhite $NEW; export BB_ENV_EXTRAWHITE="$NEW $BB_ENV_EXTRAWHITE"; }
+__oe_remove_extrawhite()  {
+    # New format not supported by some old versions of awk
+    BB_ENV_EXTRAWHITE=`echo -n "$BB_ENV_EXTRAWHITE" | awk  'BEGIN { RS=" "; ORS=" " } $0 != "'$1'" '`
+    export BB_ENV_EXTRAWHITE=${BB_ENV_EXTRAWHITE/%:/}
+}
+
+__oe_guess_bspdir () {
+    if [ -r "$BUILDDIR/conf/bblayers.conf" ]; then
+        BSPDIR=$(readlink -f `grep -e 'BSPDIR.*=' "$BUILDDIR/conf/bblayers.conf" | sed -e 's,^.*{@,,' -e 's,)}.*$,,' \
+            -e "s:os.path.abspath(os.path.dirname(d.getVar('FILE', True)) + :$BUILDDIR/conf:" \
+            -e "s,',,g"`)
+        export BSPDIR
+    fi
+}
+
+declare -a _OE_BBLAYERS
+
+__oe_guess_layers () {
+    if [ -r "$BUILDDIR/conf/bblayers.conf" ]; then
+        _OE_BBLAYERS=()
+        test -z "$BSPDIR" && __oe_guess_bspdir
+        for layer in `sed -e 's/#.*//g' $BUILDDIR/conf/bblayers.conf | fgrep '${BSPDIR}' | sed -e 's,BBLAYERS[^\$]*,,g' -e 's, ["\\],,'`; do
+            layer=`echo ${layer} | sed -e "s,\\\${BSPDIR},${BSPDIR},"`
+            _OE_BBLAYERS[${#_OE_BBLAYERS[*]}]="$layer"
+            export _OE_BBLAYERS
+        done
+    fi
+}
+
+declare -a _OE_GITREPOS
+
+__oe_guess_repos () {
+    test ${#_OE_BBLAYERS[*]} -eq 0 && __oe_guess_layers
+    for _li in `seq 0 $(expr ${#_OE_BBLAYERS[*]} - 1)`; do
+        layer="${_OE_BBLAYERS[$_li]}"
+        while [ "${layer}" != "${BSPDIR}" ]; do
+            if [ -d "${layer}/.git" ]; then
+                if ! $(echo "${_OE_GITREPOS[*]}" | grep -q "$layer"); then
+                    _OE_GITREPOS[${#_OE_GITREPOS[*]}]="$layer"
+                fi
+                break # while
+            fi
+            layer=`dirname "$layer"`
+        done
+    done
+
+    if [ -n "${BUILDDIR}" -a -d "${BUILDDIR}/.git" ]; then
+        if ! $(echo "${_OE_GITREPOS[*]}" | grep -q "${BUILDDIR}"); then
+            _OE_GITREPOS[${#_OE_GITREPOS[*]}]="${BUILDDIR}"
+        fi
+    fi
+
+    if [ -n "${BSPDIR}" -a -d "${BSPDIR}/.git" ]; then
+        if ! $(echo "${_OE_GITREPOS[*]}" | grep -q "${BSPDIR}"); then
+            _OE_GITREPOS[${#_OE_GITREPOS[*]}]="${BSPDIR}"
+        fi
+    fi
+
+    export _OE_GITREPOS
+}
+
+__oe_init () {
+    if [ ! -n "$OE_BUILDDIR_SKIP_INIT" ]; then
+        __oe_guess_layers
+        for _li in `seq 0 $(expr ${#_OE_BBLAYERS[*]} - 1)`; do
+            if [ -f "${_OE_BBLAYERS[$_li]}/.oe-init" ]; then
+                . "${_OE_BBLAYERS[$_li]}/.oe-init"
+            fi
+        done
+        if [ -f "$OE_BUILDDIR_HOME/init" ]; then
+            . "$OE_BUILDDIR_HOME/init"
+        fi
+    fi
+
+    if [ -z "$OE_SKIP_SDK_CHECK" -a ! -z "$OECORE_SDK_VERSION" ]; then
+        echo >&2 "Error: The OE SDK/ADT was detected as already being present in this shell environment."
+        echo >&2 "Please use a clean shell when using this environment script."
+        return 1
+    fi
+
+    __oe_check_py || return 1
+
+    __oe_prepend_path "${OEROOT}/scripts"
+    __oe_prepend_path "$BITBAKEDIR/bin"
+}
+
+__oe_check_py () {
+    # Make sure we're not using python v3.x. This check can't go into
+    # sanity.bbclass because bitbake's source code doesn't even pass
+    # parsing stage when used with python v3, so we catch it here so we
+    # can offer a meaningful error message.
+    py_v3_check=`/usr/bin/env python --version 2>&1 | grep "Python 3"`
+    if [ "$py_v3_check" != "" ]; then
+        echo >&2 "Bitbake is not compatible with python v3"
+        echo >&2 "Please set up python v2 as your default python interpreter"
+        return 1
+    fi
+
+    # Similarly, we now have code that doesn't parse correctly with older
+    # versions of Python, and rather than fixing that and being eternally
+    # vigilant for any other new feature use, just check the version here.
+    py_v273_check=`python -c 'import sys; print sys.version_info >= (2,7,3)'`
+    if [ "$py_v273_check" != "True" ]; then
+        echo >&2 "BitBake requires Python 2.7.3 or later"
+        return 1
+    fi
+}
+
+__oe_setup_builddir () {
+    if [ -z "$BUILDDIR" ]; then
+        echo >&2 "Error: The build directory (BUILDDIR) must be set!"
+        return 1
+    fi
+
+    mkdir -p "$BUILDDIR/conf"
+
+    if [ ! -d "$BUILDDIR" ]; then
+        echo >&2 "Error: The builddir ($BUILDDIR) does not exist!"
+        return 1
+    fi
+
+    if [ ! -w "$BUILDDIR" ]; then
+        echo >&2 "Error: Cannot write to $BUILDDIR, perhaps try using a writable path? i.e. . oe_builddir use ~/bsp/my_build"
+        return 1
+    fi
+
+    # Attempting removal of sticky,setuid bits from BUILDDIR, BUILDDIR/conf
+    chmod -st "$BUILDDIR" 2>/dev/null || echo "WARNING: unable to chmod $BUILDDIR"
+    chmod -st "$BUILDDIR/conf" 2>/dev/null || echo "WARNING: unable to chmod $BUILDDIR/conf"
+
+    cd "$BUILDDIR"
+
+    if [ -f "$BUILDDIR/conf/templateconf.cfg" ]; then
+        TEMPLATECONF=$(cat "$BUILDDIR/conf/templateconf.cfg")
+    fi
+
+    . $OEROOT/.templateconf
+
+    if [ ! -f "$BUILDDIR/conf/templateconf.cfg" ]; then
+        echo "$TEMPLATECONF" >"$BUILDDIR/conf/templateconf.cfg"
+    fi
+
+    #
+    # $TEMPLATECONF can point to a directory for the template local.conf & bblayers.conf
+    #
+    if [ -n "$TEMPLATECONF" ]; then
+        if [ ! -d "$TEMPLATECONF" ]; then
+            # Allow TEMPLATECONF=meta-xyz/conf as a shortcut
+            if [ -d "$OEROOT/$TEMPLATECONF" ]; then
+                TEMPLATECONF="$OEROOT/$TEMPLATECONF"
+            fi
+            if [ ! -d "$TEMPLATECONF" ]; then
+                echo >&2 "Error: '$TEMPLATECONF' must be a directory containing local.conf & bblayers.conf"
+                return 1
+            fi
+        fi
+        OECORELAYERCONF="$TEMPLATECONF/bblayers.conf.sample"
+        OECORELOCALCONF="$TEMPLATECONF/local.conf.sample"
+        OECORENOTESCONF="$TEMPLATECONF/conf-notes.txt"
+    fi
+
+    unset SHOWYPDOC
+    if [ -z "$OECORELOCALCONF" ]; then
+        OECORELOCALCONF="$OEROOT/meta/conf/local.conf.sample"
+    fi
+    if [ ! -r "$BUILDDIR/conf/local.conf" ]; then
+    cat <<EOM
+You had no conf/local.conf file. This configuration file has therefore been
+created for you with some default values. You may wish to edit it to use a
+different MACHINE (target hardware) or enable parallel build options to take
+advantage of multiple cores for example. See the file for more information as
+common configuration options are commented.
+
+EOM
+        cp -f $OECORELOCALCONF "$BUILDDIR/conf/local.conf"
+        SHOWYPDOC=yes
+    fi
+
+    if [ -z "$OECORELAYERCONF" ]; then
+        OECORELAYERCONF="$OEROOT/meta/conf/bblayers.conf.sample"
+    fi
+    if [ ! -r "$BUILDDIR/conf/bblayers.conf" ]; then
+        cat <<EOM
+You had no conf/bblayers.conf file. The configuration file has been created for
+you with some default values. To add additional metadata layers into your
+configuration please add entries to this file.
+
+EOM
+
+        # Put the abosolute path to the layers in bblayers.conf so we can run
+        # bitbake without the init script after the first run
+        # ##COREBASE## is deprecated as it's meaning was inconsistent, but continue
+        # to replace it for compatibility.
+        sed -e "s|##OEROOT##|$OEROOT|g" \
+            -e "s|##COREBASE##|$OEROOT|g" \
+            $OECORELAYERCONF > "$BUILDDIR/conf/bblayers.conf"
+        SHOWYPDOC=yes
+    fi
+
+    # Prevent disturbing a new GIT clone in same console
+    unset OECORELOCALCONF
+    unset OECORELAYERCONF
+
+    # Ending the first-time run message. Show the YP Documentation banner.
+    if [ ! -z "$SHOWYPDOC" ]; then
+        cat <<EOM
+The Yocto Project has extensive documentation about OE including a reference
+manual which can be found at:
+    http://yoctoproject.org/documentation
+
+For more information about OpenEmbedded see their website:
+    http://www.openembedded.org/
+
+EOM
+#    unset SHOWYPDOC
+    fi
+
+    cat <<EOM
+
+### Shell environment set up for builds. ###
+
+You can now run 'bitbake <target>'
+
+EOM
+
+    if [ -z "$OECORENOTESCONF" ]; then
+        OECORENOTESCONF="$OEROOT/meta/conf/conf-notes.txt"
+    fi
+    [ ! -r "$OECORENOTESCONF" ] || cat "$OECORENOTESCONF"
+    unset OECORENOTESCONF
+}
+
+__oe_activate() {
+    BB_ENV_EXTRAWHITE="MACHINE DISTRO TCMODE TCLIBC HTTP_PROXY http_proxy \
+HTTPS_PROXY https_proxy FTP_PROXY ftp_proxy FTPS_PROXY ftps_proxy ALL_PROXY \
+all_proxy NO_PROXY no_proxy SSH_AGENT_PID SSH_AUTH_SOCK BB_SRCREV_POLICY \
+SDKMACHINE BB_NUMBER_THREADS BB_NO_NETWORK PARALLEL_MAKE GIT_PROXY_COMMAND \
+SOCKS5_PASSWD SOCKS5_USER SCREENDIR STAMPS_DIR"
+    export BB_ENV_EXTRAWHITE
+
+    test -d "${BUILDDIR}/conf" || __oe_setup_builddir
+    export BUILDDIR
+    __oe_init
+
+    cd "${BUILDDIR}"
+}
+
+__oe_deactivate() {
+    # Shutdown any bitbake server if the BBSERVER variable is not set
+    if [ -z "$BBSERVER" ] && [ -f ${BUILDDIR}/bitbake.lock ] ; then
+        grep ":" ${BUILDDIR}/bitbake.lock > /dev/null && BBSERVER=`cat bitbake.lock` bitbake --status-only
+        if [ $? = 0 ] ; then
+            echo "Shutting down bitbake memory resident server with bitbake -m"
+            BBSERVER=`cat ${BUILDDIR}/bitbake.lock` bitbake -m
+        fi
+    fi
+
+    if [ -n "$BBSERVER" ]; then
+       unset BBSERVER
+    fi
+
+    if [ -n "$BB_ENV_EXTRAWHITE" ]; then
+       unset BB_ENV_EXTRAWHITE
+    fi
+
+    for _li in `seq 0 $(expr ${#_OE_BBLAYERS[*]} - 1)`; do
+        if [ -f "${_OE_BBLAYERS[$_li]}/.oe-down" ]; then
+            . "${_OE_BBLAYERS[$_li]}/.oe-down"
+        fi
+    done
+    if [ ! -n "$OE_BUILDDIR_SKIP_DOWN" ]; then
+        if [ -f "$OE_BUILDDIR_HOME/down" ]; then
+            . "$OE_BUILDDIR_HOME/down"
+        fi
+    fi
+
+    unset BSPDIR
+    unset _OE_BBLAYERS
+
+    __oe_remove_path "${OEROOT}/scripts"
+    __oe_remove_path "$BITBAKEDIR/bin"
+}
+
+oe_builddir () {
+    local exit_status
+    local short_option
+    export SHELL
+
+    test -z "$BITBAKEDIR" && __oe_guess_bbdir
+
+    if [[ $1 == -* ]]; then
+        short_option=$1
+        shift
+    else
+        short_option=""
+    fi
+
+    case $1 in
+        (use)
+            if [ -z "$2" ] ; then
+                echo "oe_builddir use <path>" >&2
+                exit_status=1
+            else
+                BUILDDIR="$2"
+                __oe_deactivate
+                __oe_activate
+            fi
+            ;;
+
+        (useres)
+            if [ -z "$2" ] ; then
+                echo "oe_builddir useres <path>" >&2
+                exit_status=1
+            else
+                BUILDDIR="$2"
+                test -z "$OE_BBSERVER_PORT" && OE_BBSERVER_PORT="-1"
+
+                __oe_deactivate
+                __oe_activate
+
+                res=1
+                if [ -e ${BUILDDIR}/bitbake.lock ] && grep : ${BUILDDIR}/bitbake.lock > /dev/null ; then
+                    BBSERVER=`cat ${BUILDDIR}/bitbake.lock` bitbake --status-only
+                    res=$?
+                fi
+
+                if [ $res != 0 ] ; then
+                    bitbake --server-only -t xmlrpc -B localhost:$OE_BBSERVER_PORT
+                fi
+
+                if [ $OE_BBSERVER_PORT = -1 ] ; then
+                    export BBSERVER=localhost:-1
+                    echo "Bitbake server started on demand as needed, use bitbake -m to shut it down"
+                else
+                    export BBSERVER=`cat ${BUILDDIR}/bitbake.lock`
+
+                    if [ $res = 0 ] ; then
+                        echo "Using existing bitbake server at: $BBSERVER, use bitbake -m to shut it down"
+                    else
+                        echo "Bitbake server started at: $BBSERVER, use bitbake -m to shut it down"
+                    fi
+                    unset res
+                fi
+            fi
+            ;;
+
+        (setup)
+            if [ -z "$2" ] ; then
+                echo "oe_builddir <path>" >&2
+                exit_status=1
+            else
+                BUILDDIR="$2"
+                __oe_setup_builddir
+            fi
+            ;;
+
+        (avail)
+            # XXX maybe start $(dirname $(dirname $OEROOT)) when no BSPDIR is there ...
+            if [ -n "$BSPDIR" ]; then
+                local d
+                for d in "${BSPDIR}"/*/conf/local.conf; do
+                    echo $(dirname $(dirname $d))
+                done
+            fi
+            ;;
+
+        (layers)
+            test "${#_OE_BBLAYERS[*]}" -gt 0 || __oe_guess_layers
+            for _li in `seq 0 $(expr ${#_OE_BBLAYERS[*]} - 1)`; do
+                echo "${_OE_BBLAYERS[$_li]}"
+            done
+            ;;
+
+        (repos)
+            test "${#_OE_GITREPOS[*]}" -gt 0 || __oe_guess_repos
+            for _li in `seq 0 $(expr ${#_OE_GITREPOS[*]} - 1)`; do
+                echo "${_OE_GITREPOS[$_li]}"
+            done
+            ;;
+
+        (prune)
+            test -z "$BUILDDIR" -a -n "$2" && oe_builddir use "$2"
+            if [ -z "$BUILDDIR" ] ; then
+                echo "oe_builddir use <path>; oe_builddir prune" >&2
+                echo "oe_builddir prune <path>" >&2
+                exit_status=1
+            else
+                rm -f package-depends.dot pn-buildlist pn-depends.dot task-depends.dot
+                for build_result in cache sstate-cache tmp buildhistory
+                do
+                    test -d ${BUILDDIR}/${build_result} || continue
+                    mv ${BUILDDIR}/${build_result} ${BUILDDIR}/${build_result}.old
+                    rm -rf ${BUILDDIR}/${build_result}.old &
+                done
+
+                echo "${BUILDDIR} is ready for fresh build"
+            fi
+            ;;
+
+        (off)
+            __oe_deactivate
+            unset BBPATH
+            unset BBSERVER
+            unset BB_ENV_EXTRAWHITE
+            ;;
+
+        (*)
+        cat <<EOM
+oe_builddir <command> [argument]
+Available commands:
+    use         use specified build-dir, setup when local.conf and/or bblayers.conf are missing
+    setup       create default builddir
+    avail       list possible build-dir's
+    layers      list layers used in BSP
+    repos       list repositories used in BSP
+    prune       prune old builds
+    off         remove all settings from oe from shell environment
+EOM
+            exit_status=1
+            ;;
+
+    esac
+    hash -r
+    return ${exit_status:-0}
+}
+
+test -z "$OE_BUILDDIR_HOME" && export OE_BUILDDIR_HOME="$HOME/.oe"
+test -z "$OEROOT" && __oe_guess_oeroot
