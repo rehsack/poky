@@ -23,14 +23,14 @@ distutils3_do_compile() {
         STAGING_LIBDIR=${STAGING_LIBDIR} \
         ${STAGING_BINDIR_NATIVE}/${PYTHON_PN}-native/${PYTHON_PN} setup.py \
         build ${DISTUTILS_BUILD_ARGS} || \
-        bbfatal_log "${PYTHON_PN} setup.py build_ext execution failed."
+        bbfatal_log "'${PYTHON_PN} setup.py build ${DISTUTILS_BUILD_ARGS}' execution failed."
 }
 distutils3_do_compile[vardepsexclude] = "MACHINE"
 
 distutils3_stage_headers() {
         install -d ${STAGING_DIR_HOST}${PYTHON_SITEPACKAGES_DIR}
         ${STAGING_BINDIR_NATIVE}/${PYTHON_PN}-native/${PYTHON_PN} setup.py install_headers ${DISTUTILS_STAGE_HEADERS_ARGS} || \
-        bbfatal_log "${PYTHON_PN} setup.py install_headers execution failed."
+        bbfatal_log "'${PYTHON_PN} setup.py install_headers' execution failed."
 }
 distutils3_stage_headers[vardepsexclude] = "MACHINE"
 
