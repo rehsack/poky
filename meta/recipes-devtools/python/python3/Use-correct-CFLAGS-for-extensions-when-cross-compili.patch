@@ -9,6 +9,11 @@ profile-optimized build.
 
 Upstream-Status: Pending
 
+2018-08:
+  * Rebased Makefile.pre.in for 3.7
+  * Remove patch for setup.py in favor of upstream fix
+  -- Jens
+
 Signed-off-by: Markus Lehtonen <markus.lehtonen@linux.intel.com>
 ---
  Makefile.pre.in | 4 ++--
@@ -16,41 +21,31 @@ Signed-off-by: Markus Lehtonen <markus.lehtonen@linux.intel.com>
  2 files changed, 4 insertions(+), 3 deletions(-)
 
 diff --git a/Makefile.pre.in b/Makefile.pre.in
-index e2d5d3d..84bc3ff 100644
+index 4c23c0e411..0871c98f29 100644
 --- a/Makefile.pre.in
 +++ b/Makefile.pre.in
-@@ -478,7 +478,7 @@ profile-opt:
- 	$(MAKE) profile-removal
+@@ -497,6 +497,7 @@ profile-run-stamp:
  
  build_all_generate_profile:
--	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(PGO_PROF_GEN_FLAG) @LTOFLAGS@" LDFLAGS="$(LDFLAGS) $(PGO_PROF_GEN_FLAG) @LTOFLAGS@" LIBS="$(LIBS)"
-+	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(EXTRA_CFLAGS) $(PGO_PROF_GEN_FLAG) @LTOFLAGS@" LDFLAGS="$(LDFLAGS) $(PGO_PROF_GEN_FLAG) @LTOFLAGS@" LIBS="$(LIBS)"
+ 	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(PGO_PROF_GEN_FLAG)" LDFLAGS="$(LDFLAGS) $(PGO_PROF_GEN_FLAG)" LIBS="$(LIBS)"
++	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(EXTRA_CFLAGS) $(PGO_PROF_GEN_FLAG)" LDFLAGS="$(LDFLAGS) $(PGO_PROF_GEN_FLAG)" LIBS="$(LIBS)"
  
  run_profile_task:
- 	: # FIXME: can't run for a cross build
-@@ -488,7 +488,7 @@ build_all_merge_profile:
- 	$(LLVM_PROF_MERGER)
- 
- build_all_use_profile:
--	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(PGO_PROF_USE_FLAG) @LTOFLAGS@" LDFLAGS="$(LDFLAGS) @LTOFLAGS@"
-+	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(EXTRA_CFLAGS) $(PGO_PROF_USE_FLAG) @LTOFLAGS@" LDFLAGS="$(LDFLAGS) @LTOFLAGS@"
+ 	@ # FIXME: can't run for a cross build
+@@ -510,14 +511,14 @@ build_all_merge_profile:
+ profile-opt: profile-run-stamp
+ 	@echo "Rebuilding with profile guided optimizations:"
+ 	-rm -f profile-clean-stamp
+-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(PGO_PROF_USE_FLAG)" LDFLAGS="$(LDFLAGS)"
++	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(EXTRA_CFLAGS) $(PGO_PROF_USE_FLAG)" LDFLAGS="$(LDFLAGS)"
  
  # Compile and run with gcov
  .PHONY=coverage coverage-lcov coverage-report
-diff --git a/setup.py b/setup.py
-index add3346..65e83b1 100644
---- a/setup.py
-+++ b/setup.py
-@@ -263,7 +263,8 @@ class PyBuildExt(build_ext):
-         # compilers
-         if compiler is not None:
-             if cross_compiling:
--                (ccshared,cflags) = (os.environ.get('CCSHARED') or '', os.environ.get('CFLAGS') or '')
-+                (ccshared,cflags) = (os.environ.get('CCSHARED') or '',
-+                                     (os.environ.get('CFLAGS') or '') + ' ' + sysconfig.get_config_var('PY_CFLAGS_NODIST'))
-             else:
-                 (ccshared,cflags) = sysconfig.get_config_vars('CCSHARED','CFLAGS')
-             args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags
--- 
-2.17.1
-
+ coverage:
+ 	@echo "Building with support for coverage checking:"
+ 	$(MAKE) clean profile-removal
+-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS="$(CFLAGS) -O0 -pg -fprofile-arcs -ftest-coverage" LIBS="$(LIBS) -lgcov"
++	$(MAKE) @DEF_MAKE_RULE@ CFLAGS="$(CFLAGS) $(EXTRA_CFLAGS) -O0 -pg -fprofile-arcs -ftest-coverage" LIBS="$(LIBS) -lgcov"
+ 
+ coverage-lcov:
+ 	@echo "Creating Coverage HTML report with LCOV:"

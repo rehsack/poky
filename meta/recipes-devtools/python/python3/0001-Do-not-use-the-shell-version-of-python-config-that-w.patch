@@ -14,25 +14,22 @@ Signed-off-by: Alexander Kanavin <alex.kanavin@gmail.com>
  1 file changed, 3 insertions(+), 6 deletions(-)
 
 diff --git a/Makefile.pre.in b/Makefile.pre.in
-index 236f005..5c4337f 100644
+index 31b4bcabb3..7da6d6941e 100644
 --- a/Makefile.pre.in
 +++ b/Makefile.pre.in
-@@ -1348,12 +1348,9 @@ python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
+@@ -1415,12 +1415,9 @@ python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
  	sed -e "s,@EXENAME@,$(BINDIR)/python$(LDVERSION)$(EXE)," < $(srcdir)/Misc/python-config.in >python-config.py
- 	# Replace makefile compat. variable references with shell script compat. ones; $(VAR) -> ${VAR}
+ 	@ # Replace makefile compat. variable references with shell script compat. ones; $(VAR) -> ${VAR}
  	LC_ALL=C sed -e 's,\$$(\([A-Za-z0-9_]*\)),\$$\{\1\},g' < Misc/python-config.sh >python-config
--	# On Darwin, always use the python version of the script, the shell
--	# version doesn't use the compiler customizations that are provided
--	# in python (_osx_support.py).
--	if test `uname -s` = Darwin; then \
+-	@ # On Darwin, always use the python version of the script, the shell
+-	@ # version doesn't use the compiler customizations that are provided
+-	@ # in python (_osx_support.py).
+-	@if test `uname -s` = Darwin; then \
 -		cp python-config.py python-config; \
 -	fi
-+	# In OpenEmbedded, always use the python version of the script, the shell
-+	# version is broken in multiple ways, and doesn't return correct directories
++	@ # In OpenEmbedded, always use the python version of the script, the shell
++	@ # version is broken in multiple ways, and doesn't return correct directories
 +	cp python-config.py python-config
  
  
  # Install the include files
--- 
-2.11.0
-

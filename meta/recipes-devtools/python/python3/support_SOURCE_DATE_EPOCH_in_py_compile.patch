@@ -36,12 +36,12 @@ The software will still work, but it will not use the .pyc file as it should.
  3 files changed, 27 insertions(+)
 
 diff --git a/Doc/library/py_compile.rst b/Doc/library/py_compile.rst
-index 0af8fb1..841f3e8 100644
+index d720e01050..c8cc738f3d 100644
 --- a/Doc/library/py_compile.rst
 +++ b/Doc/library/py_compile.rst
-@@ -53,6 +53,10 @@ byte-code cache files in the directory containing the source code.
-    :func:`compile` function.  The default of ``-1`` selects the optimization
-    level of the current interpreter.
+@@ -59,6 +59,10 @@ byte-code cache files in the directory containing the source code.
+    *invalidation_mode* will be forced to
+    :attr:`PycInvalidationMode.CHECKED_HASH`.
  
 +   If the SOURCE_DATE_EPOCH environment variable is set, the .py file mtime
 +   and timestamp entry in .pyc file header, will be limited to this value.
@@ -51,27 +51,27 @@ index 0af8fb1..841f3e8 100644
        Changed default value of *cfile* to be :PEP:`3147`-compliant.  Previous
        default was *file* + ``'c'`` (``'o'`` if optimization was enabled).
 diff --git a/Lib/py_compile.py b/Lib/py_compile.py
-index 11c5b50..62dcdc7 100644
+index 16dc0a011f..b7c28e4fdd 100644
 --- a/Lib/py_compile.py
 +++ b/Lib/py_compile.py
-@@ -137,6 +137,10 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
-     except FileExistsError:
+@@ -149,6 +149,10 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
          pass
-     source_stats = loader.path_stats(file)
-+    sde = os.environ.get('SOURCE_DATE_EPOCH')
-+    if sde and source_stats['mtime'] > int(sde):
-+        source_stats['mtime'] = int(sde)
-+        os.utime(file, (source_stats['mtime'], source_stats['mtime']))
-     bytecode = importlib._bootstrap_external._code_to_bytecode(
+     if invalidation_mode == PycInvalidationMode.TIMESTAMP:
+         source_stats = loader.path_stats(file)
++        sde = os.environ.get('SOURCE_DATE_EPOCH')
++        if sde and source_stats['mtime'] > int(sde):
++            source_stats['mtime'] = int(sde)
++            os.utime(file, (source_stats['mtime'], source_stats['mtime']))
+         bytecode = importlib._bootstrap_external._code_to_timestamp_pyc(
              code, source_stats['mtime'], source_stats['size'])
-     mode = importlib._bootstrap_external._calc_mode(file)
+     else:
 diff --git a/Lib/test/test_py_compile.py b/Lib/test/test_py_compile.py
-index 4a6caa5..3d09963 100644
+index 8fc0b3308c..1445a14548 100644
 --- a/Lib/test/test_py_compile.py
 +++ b/Lib/test/test_py_compile.py
-@@ -98,6 +98,25 @@ def test_bad_coding(self):
-         self.assertFalse(os.path.exists(
-             importlib.util.cache_from_source(bad_coding)))
+@@ -110,6 +110,25 @@ class PyCompileTests(unittest.TestCase):
+                 fp.read(), 'test', {})
+         self.assertEqual(flags, 0b11)
  
 +    def test_source_date_epoch(self):
 +        testtime = 123456789

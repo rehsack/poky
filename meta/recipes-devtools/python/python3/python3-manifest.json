@@ -15,22 +15,15 @@
         "files": [
             "${libdir}/python${PYTHON_MAJMIN}/asyncio",
             "${libdir}/python${PYTHON_MAJMIN}/concurrent",
-            "${libdir}/python${PYTHON_MAJMIN}/concurrent/futures"
+            "${libdir}/python${PYTHON_MAJMIN}/concurrent/futures",
+            "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/_asyncio.*.so"
         ],
         "rdepends": [
-            "compression",
             "core",
-            "crypt",
             "io",
             "logging",
-            "math",
-            "multiprocessing",
             "netclient",
-            "pickle",
-            "shell",
-            "stringold",
-            "threading",
-            "unixadmin"
+            "stringold"
         ],
         "summary": "Python Asynchronous I/"
     },
@@ -138,6 +131,7 @@
             "${libdir}/python${PYTHON_MAJMIN}/__pycache__/codeop.*.pyc",
             "${libdir}/python${PYTHON_MAJMIN}/__pycache__/configparser.*.pyc",
             "${libdir}/python${PYTHON_MAJMIN}/__pycache__/contextlib.*.pyc",
+            "${libdir}/python${PYTHON_MAJMIN}/__pycache__/contextvars.*.pyc",
             "${libdir}/python${PYTHON_MAJMIN}/__pycache__/copy.*.pyc",
             "${libdir}/python${PYTHON_MAJMIN}/__pycache__/copyreg.*.pyc",
             "${libdir}/python${PYTHON_MAJMIN}/__pycache__/csv.*.pyc",
@@ -206,7 +200,7 @@
             "${libdir}/python${PYTHON_MAJMIN}/_collections_abc.py",
             "${libdir}/python${PYTHON_MAJMIN}/_markupbase.py",
             "${libdir}/python${PYTHON_MAJMIN}/_sitebuiltins.py",
-            "${libdir}/python${PYTHON_MAJMIN}/_sysconfigdata.py",
+            "${libdir}/python${PYTHON_MAJMIN}/_sysconfigdata*.py",
             "${libdir}/python${PYTHON_MAJMIN}/_weakrefset.py",
             "${libdir}/python${PYTHON_MAJMIN}/abc.py",
             "${libdir}/python${PYTHON_MAJMIN}/argparse.py",
@@ -219,6 +213,7 @@
             "${libdir}/python${PYTHON_MAJMIN}/collections/abc.py",
             "${libdir}/python${PYTHON_MAJMIN}/configparser.py",
             "${libdir}/python${PYTHON_MAJMIN}/contextlib.py",
+            "${libdir}/python${PYTHON_MAJMIN}/contextvars.py",
             "${libdir}/python${PYTHON_MAJMIN}/copy.py",
             "${libdir}/python${PYTHON_MAJMIN}/copyreg.py",
             "${libdir}/python${PYTHON_MAJMIN}/csv.py",
@@ -248,6 +243,7 @@
             "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/__pycache__/time.*.so",
             "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/__pycache__/xreadlines.*.so",
             "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/_bisect.*.so",
+            "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/_contextvars.*.so",
             "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/_csv.*.so",
             "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/_heapq.*.so",
             "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/_opcode.*.so",
@@ -307,9 +303,13 @@
         "files": [
             "${libdir}/python${PYTHON_MAJMIN}/crypt.py",
             "${libdir}/python${PYTHON_MAJMIN}/hashlib.py",
+            "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/_blake2.*.so",
             "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/_crypt.*.so",
             "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/_hashlib.*.so",
+            "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/_md5.*.so",
+            "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/_sha1.*.so",
             "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/_sha256.*.so",
+            "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/_sha3.*.so",
             "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/_sha512.*.so"
         ],
         "rdepends": [
@@ -719,7 +719,9 @@
             "${libdir}/python${PYTHON_MAJMIN}/multiprocessing"
         ],
         "rdepends": [
-            "core"
+            "core",
+            "io",
+            "pickle"
         ],
         "summary": "Python multiprocessing support"
     },
@@ -751,18 +753,14 @@
             "${libdir}/python${PYTHON_MAJMIN}/uuid.py"
         ],
         "rdepends": [
-            "compression",
             "core",
             "crypt",
-            "ctypes",
             "datetime",
             "email",
             "io",
             "math",
             "mime",
-            "shell",
-            "stringold",
-            "unixadmin"
+            "stringold"
         ],
         "summary": "Python Internet Protocol clients"
     },
@@ -1052,13 +1050,12 @@
         "cached": [
             "${libdir}/python${PYTHON_MAJMIN}/__pycache__/_dummy_thread.*.pyc",
             "${libdir}/python${PYTHON_MAJMIN}/__pycache__/_threading_local.*.pyc",
-            "${libdir}/python${PYTHON_MAJMIN}/__pycache__/dummy_threading.*.pyc",
             "${libdir}/python${PYTHON_MAJMIN}/__pycache__/queue.*.pyc"
         ],
         "files": [
             "${libdir}/python${PYTHON_MAJMIN}/_dummy_thread.py",
             "${libdir}/python${PYTHON_MAJMIN}/_threading_local.py",
-            "${libdir}/python${PYTHON_MAJMIN}/dummy_threading.py",
+            "${libdir}/python${PYTHON_MAJMIN}/lib-dynload/_queue.*.so",
             "${libdir}/python${PYTHON_MAJMIN}/queue.py"
         ],
         "rdepends": [

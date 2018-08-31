@@ -47,16 +47,19 @@ And the semaphore issue also caused multiprocessing.Queue().put() hung.
 
 Upstream-Status: Submitted [https://github.com/python/cpython/pull/2999]
 
+2018-08: rebased for 3.7
+  -- Jens
+
 Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
 ---
  setup.py | 7 +++++--
  1 file changed, 5 insertions(+), 2 deletions(-)
 
 diff --git a/setup.py b/setup.py
-index 4f0f522..d05707d 100644
+index a97a7559ca..633eba8f1e 100644
 --- a/setup.py
 +++ b/setup.py
-@@ -1606,8 +1606,10 @@ class PyBuildExt(build_ext):
+@@ -1580,8 +1580,10 @@ class PyBuildExt(build_ext):
          elif host_platform.startswith('netbsd'):
              macros = dict()
              libraries = []
@@ -69,14 +72,11 @@ index 4f0f522..d05707d 100644
              macros = dict()
              libraries = ['rt']
  
-@@ -1626,6 +1628,7 @@ class PyBuildExt(build_ext):
-         if sysconfig.get_config_var('WITH_THREAD'):
-             exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
-                                     define_macros=list(macros.items()),
-+                                    libraries=libraries,
-                                     include_dirs=["Modules/_multiprocessing"]))
-         else:
-             missing.append('_multiprocessing')
--- 
-2.7.4
-
+@@ -1599,6 +1601,7 @@ class PyBuildExt(build_ext):
+ 
+         exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
+                                 define_macros=list(macros.items()),
++                                libraries=libraries,
+                                 include_dirs=["Modules/_multiprocessing"]))
+         # End multiprocessing
+ 

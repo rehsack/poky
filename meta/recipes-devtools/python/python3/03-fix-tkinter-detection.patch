@@ -4,11 +4,11 @@ Upstream-Status: Inappropriate [embedded specific]
 # will not be found.
 # Signed-Off: Michael 'Mickey' Lauer <mickey@vanille.de>
 
-Index: Python-3.3.0rc2/setup.py
-===================================================================
---- Python-3.3.0rc2.orig/setup.py	2012-09-20 15:24:14.009124003 -0700
-+++ Python-3.3.0rc2/setup.py	2012-09-20 15:25:08.449124963 -0700
-@@ -1620,7 +1620,7 @@
+diff --git a/setup.py b/setup.py
+index 37c5dd58a6..7f0e4d1010 100644
+--- a/setup.py
++++ b/setup.py
+@@ -1803,7 +1803,7 @@ class PyBuildExt(build_ext):
                  dotversion = dotversion[:-1] + '.' + dotversion[-1]
              tcl_include_sub = []
              tk_include_sub = []
@@ -17,7 +17,7 @@ Index: Python-3.3.0rc2/setup.py
                  tcl_include_sub += [dir + os.sep + "tcl" + dotversion]
                  tk_include_sub += [dir + os.sep + "tk" + dotversion]
              tk_include_sub += tcl_include_sub
-@@ -1639,22 +1639,6 @@
+@@ -1822,22 +1822,6 @@ class PyBuildExt(build_ext):
              if dir not in include_dirs:
                  include_dirs.append(dir)
  

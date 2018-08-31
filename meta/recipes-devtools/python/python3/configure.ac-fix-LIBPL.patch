@@ -7,24 +7,27 @@ Use LIBDIR rather than prefix/lib, so that it would work when lib64.
 
 Upstream-Status: Pending
 
+2018-08: rebased and adopted for 3.7
+  -- Jens
+
 Signed-off-by: Robert Yang <liezhi.yang@windriver.com>
 ---
  configure.ac |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/configure.ac b/configure.ac
-index 63aef8e..aefb27f 100644
+index 2b8aa4d592..0da15fbbdf 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -4366,7 +4366,7 @@ AC_MSG_RESULT($LDVERSION)
- 
+@@ -4674,9 +4674,9 @@ AC_MSG_RESULT($LDVERSION)
  dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
  AC_SUBST(PY_ENABLE_SHARED)
--LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}"
-+LIBPL='$(LIBDIR)'"/python${VERSION}/config-${LDVERSION}"
+ if test x$PLATFORM_TRIPLET = x; then
+-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}"
++  LIBPL='$(LIBDIR)'"/python${VERSION}/config-${LDVERSION}"
+ else
+-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
++  LIBPL='$(LIBDIR)'"/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+ fi
  AC_SUBST(LIBPL)
  
- # Check whether right shifting a negative integer extends the sign bit
--- 
-1.7.9.5
-

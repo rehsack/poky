@@ -1,50 +1,27 @@
+# Maintainers hint: with every new release of Python, the task
+# create_manifest - please see for detailed documentation
+# inside do_create_manifest
 require recipes-devtools/python/python3.inc
 
-DEPENDS = "python3-native libffi bzip2 gdbm openssl \
-           sqlite3 zlib virtual/libintl xz qemu-native \
-           qemu-helper-native virtual/crypt"
-
-DISTRO_SRC_URI ?= "file://sitecustomize.py"
-DISTRO_SRC_URI_linuxstdbase = ""
-SRC_URI = "http://www.python.org/ftp/python/${PV}/Python-${PV}.tar.xz \
-file://python-config.patch \
-file://030-fixup-include-dirs.patch \
-file://070-dont-clean-ipkg-install.patch \
-file://080-distutils-dont_adjust_files.patch \
-file://130-readline-setup.patch \
-file://150-fix-setupterm.patch \
-file://0001-h2py-Fix-issue-13032-where-it-fails-with-UnicodeDeco.patch \
-file://tweak-MULTIARCH-for-powerpc-linux-gnuspe.patch \
-file://support_SOURCE_DATE_EPOCH_in_py_compile.patch \
-${DISTRO_SRC_URI} \
+DEPENDS = "libffi bzip2 gdbm openssl sqlite3 zlib xz \
+           util-linux libtirpc libnsl2 virtual/libintl virtual/crypt\
 "
+DEPENDS += "${@["qemu-native qemu-helper-native", ""][bb.utils.contains('PACKAGECONFIG', 'pgo', 0, 1, d)]}"
+
+PYTHON_BINABI = "${PYTHON_MAJMIN}${PYTHON_ABI}"
 
 SRC_URI += "\
-            file://03-fix-tkinter-detection.patch \
-            file://avoid_warning_about_tkinter.patch \
-            file://cgi_py.patch \
-            file://host_include_contamination.patch \
-            file://python-3.3-multilib.patch \
-            file://sysroot-include-headers.patch \
-            file://unixccompiler.patch \
-            file://avoid-ncursesw-include-path.patch \
-            file://python3-use-CROSSPYTHONPATH-for-PYTHON_FOR_BUILD.patch \
-            file://sysconfig.py-add-_PYTHON_PROJECT_SRC.patch \
-            file://setup.py-check-cross_compiling-when-get-FLAGS.patch \
-            file://configure.ac-fix-LIBPL.patch \
-            file://0001-Issue-21272-Use-_sysconfigdata.py-to-initialize-dist.patch \
-            file://pass-missing-libraries-to-Extension-for-mul.patch \
-            file://Use-correct-CFLAGS-for-extensions-when-cross-compili.patch \
-            file://0002-Makefile-add-target-to-split-profile-generation.patch \
-            file://float-endian.patch \
-            file://ftplib.patch \
-            file://signal.patch \
-            file://0001-Issue-28043-SSLContext-has-improved-default-settings.patch \
-            file://0002-bpo-29136-Add-TLS-1.3-cipher-suites-and-OP_NO_TLSv1_.patch \
-            file://0003-bpo-32947-Fixes-for-TLS-1.3-and-OpenSSL-1.1.1-GH-876.patch \
-            file://0004-bpo-33570-TLS-1.3-ciphers-for-OpenSSL-1.1.1-GH-6976.patch \
-            file://0005-bpo-30714-ALPN-changes-for-OpenSSL-1.1.0f-2305.patch \
-           "
+    file://tweak-MULTIARCH-for-powerpc-linux-gnuspe.patch \
+    file://cgi_py.patch \
+    file://host_include_contamination.patch \
+    file://uuid_when_cross_compiling.patch \
+    file://avoid-ncursesw-include-path.patch \
+    file://python3-use-CROSSPYTHONPATH-for-PYTHON_FOR_BUILD.patch \
+    file://configure.ac-fix-LIBPL.patch \
+    file://pass-missing-libraries-to-Extension-for-mul.patch \
+    file://float-endian.patch \
+    file://ftplib.patch \
+"
 
 inherit multilib_header python3native update-alternatives qemu
 
@@ -53,8 +30,6 @@ MULTILIB_SUFFIX = "${@d.getVar('base_libdir',1).split('/')[-1]}"
 ALTERNATIVE_${PN}-dev = "python-config"
 ALTERNATIVE_LINK_NAME[python-config] = "${bindir}/python${PYTHON_BINABI}-config"
 ALTERNATIVE_TARGET[python-config] = "${bindir}/python${PYTHON_BINABI}-config-${MULTILIB_SUFFIX}"
-
-CONFIGUREOPTS += " --with-system-ffi "
 
 CACHED_CONFIGUREVARS = "ac_cv_have_chflags=no \
                 ac_cv_have_lchflags=no \
@@ -68,8 +43,7 @@ TARGET_CC_ARCH += "-DNDEBUG -fno-inline"
 SDK_CC_ARCH += "-DNDEBUG -fno-inline"
 EXTRA_OEMAKE += "CROSS_COMPILE=yes"
 EXTRA_OECONF += "CROSSPYTHONPATH=${STAGING_LIBDIR_NATIVE}/python${PYTHON_MAJMIN}/lib-dynload/ --without-ensurepip"
-
-PYTHON3_PROFILE_TASK ?= "./python -m test.regrtest --pgo test_grammar test_opcodes test_dict test_builtin test_exceptions test_types test_support || true"
+PYTHON3_PROFILE_TASK ?= "./python -m test.regrtest --pgo test_grammar test_opcodes test_dict test_builtin test_exceptions test_types test_support"
 
 export CROSS_COMPILE = "${TARGET_PREFIX}"
 export CCSHARED = "-fPIC"
@@ -77,14 +51,10 @@ export CCSHARED = "-fPIC"
 # Fix cross compilation of different modules
 export CROSSPYTHONPATH = "${STAGING_LIBDIR_NATIVE}/python${PYTHON_MAJMIN}/lib-dynload/:${B}/build/lib.linux-${TARGET_ARCH}-${PYTHON_MAJMIN}:${S}/Lib:${S}/Lib/plat-linux"
 
-PACKAGECONFIG ??= "readline ${@bb.utils.contains('MACHINE_FEATURES', 'qemu-usermode', 'pgo', '', d)}"
+PACKAGECONFIG ??= "pgo readline ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'bluetooth', '', d)}"
 PACKAGECONFIG[readline] = ",,readline"
 # Use profile guided optimisation by running PyBench inside qemu-user
 PACKAGECONFIG[pgo] = "--enable-optimizations"
-
-do_configure_append() {
-	rm -f ${S}/Makefile.orig
-}
 
 run_make() {
 	oe_runmake PGEN=${STAGING_BINDIR_NATIVE}/python3-native/pgen \
@@ -99,17 +69,6 @@ run_make() {
 }
 
 do_compile() {
-	# regenerate platform specific files, because they depend on system headers
-	cd ${S}/Lib/plat-linux*
-	include=${STAGING_INCDIR} ${STAGING_BINDIR_NATIVE}/python3-native/python3 \
-		${S}/Tools/scripts/h2py.py -i '(u_long)' \
-		${STAGING_INCDIR}/dlfcn.h \
-		${STAGING_INCDIR}/linux/cdrom.h \
-		${STAGING_INCDIR}/netinet/in.h \
-		${STAGING_INCDIR}/sys/types.h
-	sed -e 's,${STAGING_DIR_HOST},,g' -i *.py
-	cd -
-
 	# remove any bogus LD_LIBRARY_PATH
 	sed -i -e s,RUNSHARED=.*,RUNSHARED=, Makefile
 
@@ -124,27 +83,30 @@ do_compile() {
 		-e 's,^INCLUDEDIR=.*,INCLUDE=${STAGING_INCDIR},g' \
 		-e 's,^CONFINCLUDEDIR=.*,CONFINCLUDE=${STAGING_INCDIR},g' \
 		Makefile
+
+        if ${@bb.utils.contains('PACKAGECONFIG', 'pgo', 'true', 'false', d)}; then
+		qemu_binary="${@qemu_wrapper_cmdline(d, '${STAGING_DIR_TARGET}', ['${B}', '${STAGING_DIR_TARGET}/${base_libdir}'])}"
+		cat > ${B}/pgo-wrapper << EOF
+#!/bin/sh
+set -x
+cd ${B}
+$qemu_binary "\$@"
+EOF
+		chmod +x ${B}/pgo-wrapper
+		bbnote Updating Makefile to gather profiling data during build
+		sed -i  -e 's,$(LLVM_PROF_FILE) $(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK),${B}/pgo-wrapper ./python $(PROFILE_TASK),' \
+			-e 's,PROFILE_TASK=.*,PROFILE_TASK=${PYTHON3_PROFILE_TASK},' \
+			Makefile
+	else
+		sed -i -e 's,$(LLVM_PROF_FILE) $(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK),:,' \
+			Makefile
+	fi
+
 	# save copy of it now, because if we do it in do_install and 
 	# then call do_install twice we get Makefile.orig == Makefile.sysroot
 	install -m 0644 Makefile Makefile.sysroot
 
-	if ${@bb.utils.contains('PACKAGECONFIG', 'pgo', 'true', 'false', d)}; then
-		run_make profile-opt
-		qemu_binary="${@qemu_wrapper_cmdline(d, '${STAGING_DIR_TARGET}', ['${B}', '${STAGING_DIR_TARGET}/${base_libdir}'])}"
-		cat >pgo-wrapper <<EOF
-#!/bin/sh
-cd ${B}
-$qemu_binary "\$@"
-EOF
-		chmod +x pgo-wrapper
-		bbnote Gathering profiling data
-		./pgo-wrapper ${PYTHON3_PROFILE_TASK}
-		bbnote Profiling data gathered, rebuilding
-		run_make clean_and_use_profile
-	else
-		run_make libpython3.so
-		run_make
-	fi
+        run_make profile-opt
 }
 
 do_install() {
@@ -157,19 +119,15 @@ do_install() {
 
 	# rerun the build once again with original makefile this time
 	# run install in a separate step to avoid compile/install race
-	if ${@bb.utils.contains('PACKAGECONFIG', 'pgo', 'true', 'false', d)}; then
-		run_make DESTDIR=${D} LIBDIR=${libdir} build_all_use_profile
-	else
-		run_make DESTDIR=${D} LIBDIR=${libdir}
-	fi
-
+	run_make DESTDIR=${D} LIBDIR=${libdir} build_all
 	run_make DESTDIR=${D} LIBDIR=${libdir} install
 
 	# avoid conflict with 2to3 from Python 2
 	rm -f ${D}/${bindir}/2to3
 
-	install -m 0644 Makefile.sysroot ${D}/${libdir}/python${PYTHON_MAJMIN}/config/Makefile
-	install -m 0644 Makefile.sysroot ${D}/${libdir}/python${PYTHON_MAJMIN}/config-${PYTHON_MAJMIN}${PYTHON_ABI}/Makefile
+	set -x
+        install -m 0644 Makefile.sysroot ${D}/${libdir}/python${PYTHON_MAJMIN}/config/Makefile
+	install -m 0644 Makefile.sysroot ${D}/${libdir}/python${PYTHON_MAJMIN}/config-${PYTHON_BINABI}-${MULTIARCH}/Makefile
 
 	if [ -e ${WORKDIR}/sitecustomize.py ]; then
 		install -m 0644 ${WORKDIR}/sitecustomize.py ${D}/${libdir}/python${PYTHON_MAJMIN}
@@ -186,9 +144,22 @@ SSTATE_SCAN_FILES += "Makefile"
 PACKAGE_PREPROCESS_FUNCS += "py_package_preprocess"
 
 py_package_preprocess () {
+	MAKESETTINGS="$(egrep '^(ABIFLAGS|MULTIARCH)=' ${B}/Makefile | sed -E -e 's/[[:space:]]//g' -e 's/=/="/' -e 's/$/"/')"
+	eval ${MAKESETTINGS}
+	if test "${ABIFLAGS}" != "${PYTHON_ABI}"; then
+	    die "do_install: configure determined ABIFLAGS '${ABIFLAGS}' != '${PYTHON_ABI}' from python3-dir.bbclass"
+	fi
+	if test "x${BUILD_OS}" = "x${TARGET_OS}"; then
+		# no cross-compile at all
+		_PYTHON_SYSCONFIGDATA_NAME=${PYTHON_ABI}_${TARGET_OS}_${MULTIARCH}
+	else
+		# at the very moment, it's the only available target
+		_PYTHON_SYSCONFIGDATA_NAME=${PYTHON_ABI}_linux_${MULTIARCH}
+	fi
+
 	# copy back the old Makefile to fix target package
 	install -m 0644 ${B}/Makefile.orig ${PKGD}/${libdir}/python${PYTHON_MAJMIN}/config/Makefile
-	install -m 0644 ${B}/Makefile.orig ${PKGD}/${libdir}/python${PYTHON_MAJMIN}/config-${PYTHON_MAJMIN}${PYTHON_ABI}/Makefile
+	install -m 0644 ${B}/Makefile.orig ${PKGD}/${libdir}/python${PYTHON_MAJMIN}/config-${PYTHON_BINABI}-${MULTIARCH}/Makefile
 	# Remove references to buildmachine paths in target Makefile and _sysconfigdata
 	sed -i -e 's:--sysroot=${STAGING_DIR_TARGET}::g' -e s:'--with-libtool-sysroot=${STAGING_DIR_TARGET}'::g \
 		-e 's|${DEBUG_PREFIX_MAP}||g' \
@@ -197,18 +168,18 @@ py_package_preprocess () {
 		-e 's:${RECIPE_SYSROOT}::g' \
 		-e 's:${BASE_WORKDIR}/${MULTIMACH_TARGET_SYS}::g' \
 		${PKGD}/${libdir}/python${PYTHON_MAJMIN}/config/Makefile \
-		${PKGD}/${libdir}/python${PYTHON_MAJMIN}/config-${PYTHON_MAJMIN}${PYTHON_ABI}/Makefile \
-		${PKGD}/${libdir}/python${PYTHON_MAJMIN}/_sysconfigdata.py \
+		${PKGD}/${libdir}/python${PYTHON_MAJMIN}/config-${PYTHON_BINABI}-${MULTIARCH}/Makefile \
+		${PKGD}/${libdir}/python${PYTHON_MAJMIN}/_sysconfigdata_${_PYTHON_SYSCONFIGDATA_NAME}.py \
 		${PKGD}/${bindir}/python${PYTHON_BINABI}-config
 
 	# Recompile _sysconfigdata after modifying it
 	cd ${PKGD}
 	${STAGING_BINDIR_NATIVE}/${PYTHON_PN}-native/${PYTHON_PN} \
-	     -c "from py_compile import compile; compile('./${libdir}/python${PYTHON_MAJMIN}/_sysconfigdata.py')"
+	     -c "from py_compile import compile; compile('./${libdir}/python${PYTHON_MAJMIN}/_sysconfigdata_${_PYTHON_SYSCONFIGDATA_NAME}.py')"
 	${STAGING_BINDIR_NATIVE}/${PYTHON_PN}-native/${PYTHON_PN} \
-	     -c "from py_compile import compile; compile('./${libdir}/python${PYTHON_MAJMIN}/_sysconfigdata.py', optimize=1)"
+	     -c "from py_compile import compile; compile('./${libdir}/python${PYTHON_MAJMIN}/_sysconfigdata_${_PYTHON_SYSCONFIGDATA_NAME}.py', optimize=1)"
 	${STAGING_BINDIR_NATIVE}/${PYTHON_PN}-native/${PYTHON_PN} \
-	     -c "from py_compile import compile; compile('./${libdir}/python${PYTHON_MAJMIN}/_sysconfigdata.py', optimize=2)"
+	     -c "from py_compile import compile; compile('./${libdir}/python${PYTHON_MAJMIN}/_sysconfigdata_${_PYTHON_SYSCONFIGDATA_NAME}.py', optimize=2)"
 	cd -
 
 	mv ${PKGD}/${bindir}/python${PYTHON_BINABI}-config ${PKGD}/${bindir}/python${PYTHON_BINABI}-config-${MULTILIB_SUFFIX}
@@ -230,7 +201,7 @@ FILES_${PN}-pyvenv += "${bindir}/pyvenv-${PYTHON_MAJMIN} ${bindir}/pyvenv"
 # package libpython3
 PACKAGES =+ "libpython3 libpython3-staticdev"
 FILES_libpython3 = "${libdir}/libpython*.so.*"
-FILES_libpython3-staticdev += "${libdir}/python${PYTHON_MAJMIN}/config-${PYTHON_BINABI}/libpython${PYTHON_BINABI}.a"
+FILES_libpython3-staticdev += "${libdir}/python${PYTHON_MAJMIN}/config-${PYTHON_BINABI}*/libpython${PYTHON_BINABI}.a"
 INSANE_SKIP_${PN}-dev += "dev-elf"
 
 # catch all the rest (unsorted)
@@ -281,7 +252,7 @@ python(){
         for value in python_manifest[key]['files']:
             d.appendVar('FILES_' + pypackage, ' ' + value)
 
-    	# Add cached files
+	# Add cached files
         if include_pycs == '1':
             for value in python_manifest[key]['cached']:
                     d.appendVar('FILES_' + pypackage, ' ' + value)

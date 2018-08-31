@@ -4,7 +4,7 @@ Date: Tue, 14 May 2013 15:00:26 -0700
 Subject: [PATCH 01/13] get the sys.lib from python itself and do not use
  hardcoded value of 'lib'
 
-02/2015 Rebased for 3.4.2
+08/2018 Rebased for 3.7.0
 
 Upstream-Status: Pending
 Signed-off-by: Khem Raj <raj.khem@gmail.com>
@@ -25,12 +25,12 @@ Signed-off-by: Alejandro Hernandez <alejandro.hernandez@linux.intel.com>
  setup.py                         |  9 ++++-----
  12 files changed, 97 insertions(+), 23 deletions(-)
 
-Index: Python-3.5.4/Include/pythonrun.h
-===================================================================
---- Python-3.5.4.orig/Include/pythonrun.h
-+++ Python-3.5.4/Include/pythonrun.h
-@@ -23,6 +23,9 @@ typedef struct {
- } PyCompilerFlags;
+diff --git a/Include/pythonrun.h b/Include/pythonrun.h
+index 6f0c6fc655..95a597b412 100644
+--- a/Include/pythonrun.h
++++ b/Include/pythonrun.h
+@@ -7,6 +7,9 @@
+ extern "C" {
  #endif
  
 +PyAPI_FUNC(const char *) Py_GetArch(void);
@@ -39,10 +39,10 @@ Index: Python-3.5.4/Include/pythonrun.h
  #ifndef Py_LIMITED_API
  PyAPI_FUNC(int) PyRun_SimpleStringFlags(const char *, PyCompilerFlags *);
  PyAPI_FUNC(int) PyRun_AnyFileFlags(FILE *, const char *, PyCompilerFlags *);
-Index: Python-3.5.4/Lib/distutils/command/install.py
-===================================================================
---- Python-3.5.4.orig/Lib/distutils/command/install.py
-+++ Python-3.5.4/Lib/distutils/command/install.py
+diff --git a/Lib/distutils/command/install.py b/Lib/distutils/command/install.py
+index 0258d3deae..352fd8f792 100644
+--- a/Lib/distutils/command/install.py
++++ b/Lib/distutils/command/install.py
 @@ -19,6 +19,8 @@ from site import USER_BASE
  from site import USER_SITE
  HAS_USER_SITE = True
@@ -63,11 +63,11 @@ Index: Python-3.5.4/Lib/distutils/command/install.py
          'headers': '$base/include/python$py_version_short$abiflags/$dist_name',
          'scripts': '$base/bin',
          'data'   : '$base',
-Index: Python-3.5.4/Lib/pydoc.py
-===================================================================
---- Python-3.5.4.orig/Lib/pydoc.py
-+++ Python-3.5.4/Lib/pydoc.py
-@@ -389,7 +389,7 @@ class Doc:
+diff --git a/Lib/pydoc.py b/Lib/pydoc.py
+index 8a6b27b16e..fc55893b18 100644
+--- a/Lib/pydoc.py
++++ b/Lib/pydoc.py
+@@ -399,7 +399,7 @@ class Doc:
      docmodule = docclass = docroutine = docother = docproperty = docdata = fail
  
      def getdocloc(self, object,
@@ -76,29 +76,30 @@ Index: Python-3.5.4/Lib/pydoc.py
                                         "python%d.%d" %  sys.version_info[:2])):
          """Return the location of module docs or None"""
  
-Index: Python-3.5.4/Lib/site.py
-===================================================================
---- Python-3.5.4.orig/Lib/site.py
-+++ Python-3.5.4/Lib/site.py
-@@ -303,12 +303,12 @@ def getsitepackages(prefixes=None):
+diff --git a/Lib/site.py b/Lib/site.py
+index ffd132b389..3ca8270d49 100644
+--- a/Lib/site.py
++++ b/Lib/site.py
+@@ -334,12 +334,12 @@ def getsitepackages(prefixes=None):
          seen.add(prefix)
  
          if os.sep == '/':
 -            sitepackages.append(os.path.join(prefix, "lib",
+-                                        "python%d.%d" % sys.version_info[:2],
 +            sitepackages.append(os.path.join(prefix, sys.lib,
-                                         "python" + sys.version[:3],
++                                        "python%d.%d" % sys.version_info[:2],
                                          "site-packages"))
          else:
              sitepackages.append(prefix)
 -            sitepackages.append(os.path.join(prefix, "lib", "site-packages"))
 +            sitepackages.append(os.path.join(prefix, sys.lib, "site-packages"))
-         if sys.platform == "darwin":
-             # for framework builds *only* we add the standard Apple
-             # locations.
-Index: Python-3.5.4/Lib/sysconfig.py
-===================================================================
---- Python-3.5.4.orig/Lib/sysconfig.py
-+++ Python-3.5.4/Lib/sysconfig.py
+     return sitepackages
+ 
+ def addsitepackages(known_paths, prefixes=None):
+diff --git a/Lib/sysconfig.py b/Lib/sysconfig.py
+index e0f9c18531..9869363977 100644
+--- a/Lib/sysconfig.py
++++ b/Lib/sysconfig.py
 @@ -20,10 +20,10 @@ __all__ = [
  
  _INSTALL_SCHEMES = {
@@ -129,7 +130,7 @@ Index: Python-3.5.4/Lib/sysconfig.py
          'include': '{installed_base}/include/python',
          'platinclude': '{installed_base}/include/python',
          'scripts': '{base}/bin',
-@@ -61,10 +61,10 @@ _INSTALL_SCHEMES = {
+@@ -62,10 +62,10 @@ _INSTALL_SCHEMES = {
          'data': '{userbase}',
          },
      'posix_user': {
@@ -144,28 +145,24 @@ Index: Python-3.5.4/Lib/sysconfig.py
          'include': '{userbase}/include/python{py_version_short}',
          'scripts': '{userbase}/bin',
          'data': '{userbase}',
-Index: Python-3.5.4/Lib/trace.py
-===================================================================
---- Python-3.5.4.orig/Lib/trace.py
-+++ Python-3.5.4/Lib/trace.py
-@@ -749,10 +749,10 @@ def main(argv=None):
-                 # should I also call expanduser? (after all, could use $HOME)
+diff --git a/Lib/trace.py b/Lib/trace.py
+index 86b2101763..f3c32ec317 100755
+--- a/Lib/trace.py
++++ b/Lib/trace.py
+@@ -659,7 +659,7 @@ def main():
+     opts = parser.parse_args()
  
-                 s = s.replace("$prefix",
--                              os.path.join(sys.base_prefix, "lib",
-+                              os.path.join(sys.base_prefix, sys.lib,
-                                            "python" + sys.version[:3]))
-                 s = s.replace("$exec_prefix",
--                              os.path.join(sys.base_exec_prefix, "lib",
-+                              os.path.join(sys.base_exec_prefix, sys.lib,
-                                            "python" + sys.version[:3]))
-                 s = os.path.normpath(s)
-                 ignore_dirs.append(s)
-Index: Python-3.5.4/Makefile.pre.in
-===================================================================
---- Python-3.5.4.orig/Makefile.pre.in
-+++ Python-3.5.4/Makefile.pre.in
-@@ -109,6 +109,8 @@ CFLAGS_ALIASING=@CFLAGS_ALIASING@
+     if opts.ignore_dir:
+-        rel_path = 'lib', 'python{0.major}.{0.minor}'.format(sys.version_info)
++        rel_path = sys.lib, 'python{0.major}.{0.minor}'.format(sys.version_info)
+         _prefix = os.path.join(sys.base_prefix, *rel_path)
+         _exec_prefix = os.path.join(sys.base_exec_prefix, *rel_path)
+ 
+diff --git a/Makefile.pre.in b/Makefile.pre.in
+index 31b4bcabb3..713215e57d 100644
+--- a/Makefile.pre.in
++++ b/Makefile.pre.in
+@@ -114,6 +114,8 @@ CFLAGS_ALIASING=@CFLAGS_ALIASING@
  
  # Machine-dependent subdirectories
  MACHDEP=	@MACHDEP@
@@ -174,7 +171,7 @@ Index: Python-3.5.4/Makefile.pre.in
  
  # Multiarch directory (may be empty)
  MULTIARCH=	@MULTIARCH@
-@@ -128,7 +130,7 @@ LIBDIR=		@libdir@
+@@ -134,7 +136,7 @@ LIBDIR=		@libdir@
  MANDIR=		@mandir@
  INCLUDEDIR=	@includedir@
  CONFINCLUDEDIR=	$(exec_prefix)/include
@@ -183,7 +180,7 @@ Index: Python-3.5.4/Makefile.pre.in
  ABIFLAGS=	@ABIFLAGS@
  
  # Detailed destination directories
-@@ -731,6 +733,7 @@ Modules/getpath.o: $(srcdir)/Modules/get
+@@ -754,6 +756,7 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
  		-DEXEC_PREFIX='"$(exec_prefix)"' \
  		-DVERSION='"$(VERSION)"' \
  		-DVPATH='"$(VPATH)"' \
@@ -191,8 +188,8 @@ Index: Python-3.5.4/Makefile.pre.in
  		-o $@ $(srcdir)/Modules/getpath.c
  
  Programs/python.o: $(srcdir)/Programs/python.c
-@@ -813,7 +816,7 @@ regen-opcode:
- Python/compile.o Python/symtable.o Python/ast.o: $(srcdir)/Include/graminit.h $(srcdir)/Include/Python-ast.h
+@@ -842,7 +845,7 @@ regen-opcode:
+ Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o: $(srcdir)/Include/graminit.h $(srcdir)/Include/Python-ast.h
  
  Python/getplatform.o: $(srcdir)/Python/getplatform.c
 -		$(CC) -c $(PY_CORE_CFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
@@ -200,11 +197,11 @@ Index: Python-3.5.4/Makefile.pre.in
  
  Python/importdl.o: $(srcdir)/Python/importdl.c
  		$(CC) -c $(PY_CORE_CFLAGS) -I$(DLINCLDIR) -o $@ $(srcdir)/Python/importdl.c
-Index: Python-3.5.4/Modules/getpath.c
-===================================================================
---- Python-3.5.4.orig/Modules/getpath.c
-+++ Python-3.5.4/Modules/getpath.c
-@@ -105,6 +105,13 @@
+diff --git a/Modules/getpath.c b/Modules/getpath.c
+index 041cb14b4b..d52d1e1cdb 100644
+--- a/Modules/getpath.c
++++ b/Modules/getpath.c
+@@ -106,6 +106,13 @@ extern "C" {
  #error "PREFIX, EXEC_PREFIX, VERSION, and VPATH must be constant defined"
  #endif
  
@@ -218,30 +215,22 @@ Index: Python-3.5.4/Modules/getpath.c
  #ifndef LANDMARK
  #define LANDMARK L"os.py"
  #endif
-@@ -113,6 +120,7 @@ static wchar_t prefix[MAXPATHLEN+1];
- static wchar_t exec_prefix[MAXPATHLEN+1];
- static wchar_t progpath[MAXPATHLEN+1];
- static wchar_t *module_search_path = NULL;
-+static wchar_t *lib_python = L"" LIB_PYTHON;
- 
- /* Get file status. Encode the path to the locale encoding. */
- 
-@@ -494,7 +502,7 @@ calculate_path(void)
-     _pythonpath = Py_DecodeLocale(PYTHONPATH, NULL);
-     _prefix = Py_DecodeLocale(PREFIX, NULL);
-     _exec_prefix = Py_DecodeLocale(EXEC_PREFIX, NULL);
--    lib_python = Py_DecodeLocale("lib/python" VERSION, NULL);
-+    lib_python = Py_DecodeLocale(LIB_PYTHON, NULL);
- 
-     if (!_pythonpath || !_prefix || !_exec_prefix || !lib_python) {
-         Py_FatalError(
-Index: Python-3.5.4/Python/getplatform.c
-===================================================================
---- Python-3.5.4.orig/Python/getplatform.c
-+++ Python-3.5.4/Python/getplatform.c
+@@ -867,7 +874,7 @@ calculate_init(PyCalculatePath *calculate,
+     if (!calculate->prefix) {
+         return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
+     }
+-    calculate->lib_python = Py_DecodeLocale("lib/python" VERSION, &len);
++    calculate->lib_python = Py_DecodeLocale(LIB_PYTHON, &len);
+     if (!calculate->lib_python) {
+         return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
+     }
+diff --git a/Python/getplatform.c b/Python/getplatform.c
+index 81a0f7ac53..bc7127ae3e 100644
+--- a/Python/getplatform.c
++++ b/Python/getplatform.c
 @@ -10,3 +10,23 @@ Py_GetPlatform(void)
  {
- 	return PLATFORM;
+     return PLATFORM;
  }
 +
 +#ifndef ARCH
@@ -263,11 +252,11 @@ Index: Python-3.5.4/Python/getplatform.c
 +{
 +	return LIB;
 +}
-Index: Python-3.5.4/Python/sysmodule.c
-===================================================================
---- Python-3.5.4.orig/Python/sysmodule.c
-+++ Python-3.5.4/Python/sysmodule.c
-@@ -1827,6 +1827,10 @@ _PySys_Init(void)
+diff --git a/Python/sysmodule.c b/Python/sysmodule.c
+index 177b830762..38112b831e 100644
+--- a/Python/sysmodule.c
++++ b/Python/sysmodule.c
+@@ -2324,6 +2324,10 @@ _PySys_BeginInit(PyObject **sysmod)
                          PyUnicode_FromString(Py_GetCopyright()));
      SET_SYS_FROM_STRING("platform",
                          PyUnicode_FromString(Py_GetPlatform()));
@@ -275,16 +264,16 @@ Index: Python-3.5.4/Python/sysmodule.c
 +                        PyUnicode_FromString(Py_GetArch()));
 +    SET_SYS_FROM_STRING("lib",
 +                        PyUnicode_FromString(Py_GetLib()));
-     SET_SYS_FROM_STRING("executable",
-                         PyUnicode_FromWideChar(
-                                Py_GetProgramFullPath(), -1));
-Index: Python-3.5.4/configure.ac
-===================================================================
---- Python-3.5.4.orig/configure.ac
-+++ Python-3.5.4/configure.ac
-@@ -885,6 +885,41 @@ PLATDIR=plat-$MACHDEP
- AC_SUBST(PLATDIR)
- AC_SUBST(PLATFORM_TRIPLET)
+     SET_SYS_FROM_STRING("maxsize",
+                         PyLong_FromSsize_t(PY_SSIZE_T_MAX));
+     SET_SYS_FROM_STRING("float_info",
+diff --git a/configure.ac b/configure.ac
+index 5b66624d78..1c88696532 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -867,6 +867,41 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+ LDFLAGS="$save_LDFLAGS"
+ AC_SUBST(NO_AS_NEEDED)
  
 +AC_SUBST(ARCH)
 +AC_MSG_CHECKING(ARCH)
@@ -322,13 +311,13 @@ Index: Python-3.5.4/configure.ac
 +esac
 +AC_MSG_RESULT($LIB)
  
- AC_MSG_CHECKING([for -Wl,--no-as-needed])
- save_LDFLAGS="$LDFLAGS"
-Index: Python-3.5.4/setup.py
-===================================================================
---- Python-3.5.4.orig/setup.py
-+++ Python-3.5.4/setup.py
-@@ -494,7 +494,7 @@ class PyBuildExt(build_ext):
+ # checks for UNIX variants that set C preprocessor variables
+ AC_USE_SYSTEM_EXTENSIONS
+diff --git a/setup.py b/setup.py
+index 37c5dd58a6..b82b7177bc 100644
+--- a/setup.py
++++ b/setup.py
+@@ -541,7 +541,7 @@ class PyBuildExt(build_ext):
          # directories (i.e. '.' and 'Include') must be first.  See issue
          # 10520.
          if not cross_compiling:
@@ -337,17 +326,16 @@ Index: Python-3.5.4/setup.py
              add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
          # only change this for cross builds for 3.3, issues on Mageia
          if cross_compiling:
-@@ -552,8 +552,7 @@ class PyBuildExt(build_ext):
-         # be assumed that no additional -I,-L directives are needed.
-         if not cross_compiling:
-             lib_dirs = self.compiler.library_dirs + [
--                '/lib64', '/usr/lib64',
--                '/lib', '/usr/lib',
-+                '/' + sys.lib, '/usr/' + sys.lib,
-                 ]
-             inc_dirs = self.compiler.include_dirs + ['/usr/include']
-         else:
-@@ -745,11 +744,11 @@ class PyBuildExt(build_ext):
+@@ -579,7 +579,7 @@ class PyBuildExt(build_ext):
+             add_dir_to_list(self.compiler.include_dirs,
+                             sysconfig.get_config_var("INCLUDEDIR"))
+ 
+-        system_lib_dirs = ['/lib64', '/usr/lib64', '/lib', '/usr/lib']
++        system_lib_dirs = ['/' + sys.lib, '/usr/' + sys.lib]
+         system_include_dirs = ['/usr/include']
+         # lib_dirs and inc_dirs are used to search for files;
+         # if a file is found in one of those directories, it can
+@@ -836,11 +836,11 @@ class PyBuildExt(build_ext):
              elif curses_library:
                  readline_libs.append(curses_library)
              elif self.compiler.find_library_file(lib_dirs +
@@ -361,3 +349,26 @@ Index: Python-3.5.4/setup.py
                                     extra_link_args=readline_extra_link_args,
                                     libraries=readline_libs) )
          else:
+@@ -1054,8 +1054,7 @@ class PyBuildExt(build_ext):
+ 
+                 # check lib directories parallel to the location of the header
+                 db_dirs_to_check = [
+-                    db_incdir.replace("include", 'lib64'),
+-                    db_incdir.replace("include", 'lib'),
++                    db_incdir.replace("include", sys.lib),
+                 ]
+ 
+                 if host_platform != 'darwin':
+@@ -1166,10 +1165,8 @@ class PyBuildExt(build_ext):
+ 
+         if sqlite_incdir:
+             sqlite_dirs_to_check = [
+-                os.path.join(sqlite_incdir, '..', 'lib64'),
+-                os.path.join(sqlite_incdir, '..', 'lib'),
+-                os.path.join(sqlite_incdir, '..', '..', 'lib64'),
+-                os.path.join(sqlite_incdir, '..', '..', 'lib'),
++                os.path.join(sqlite_incdir, '..', sys.lib),
++                os.path.join(sqlite_incdir, '..', '..', sys.lib),
+             ]
+             sqlite_libfile = self.compiler.find_library_file(
+                                 sqlite_dirs_to_check + lib_dirs, 'sqlite3')

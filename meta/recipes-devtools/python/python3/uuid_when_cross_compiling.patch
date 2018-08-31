@@ -1,0 +1,24 @@
+Subject: [PATCH] util-linux uuid support
+
+Scan for uuid.h in include/uuid/ as well as in include/ to catch
+the uuid/uuid.h well supported but accidently not detected.
+
+Upstream-Status: Pending
+
+Signed-off-by: Jens Rehsack <sno@NetBSD.org>
+diff --git a/setup.py b/setup.py
+index a97a7559ca..01d8f24fdd 100644
+--- a/setup.py
++++ b/setup.py
+@@ -1596,8 +1596,9 @@ class PyBuildExt(build_ext):
+         #    missing.append('_tkinter')
+ 
+         # Build the _uuid module if possible
+-        uuid_incs = find_file("uuid.h", inc_dirs, ["/usr/include/uuid"])
+-        if uuid_incs is not None:
++        uuid_incs = find_file("uuid.h", inc_dirs, [])
++        uuid_uuid_incs = find_file("uuid/uuid.h", inc_dirs, [])
++        if uuid_incs is not None or uuid_uuid_incs is not None:
+             if self.compiler.find_library_file(lib_dirs, 'uuid'):
+                 uuid_libs = ['uuid']
+             else:

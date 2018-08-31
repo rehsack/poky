@@ -6,16 +6,16 @@ hardcoded locations for include paths
 
 Signed-off-by: Khem Raj <raj.khem@gmail.com>
 
-Index: Python-3.4.2/configure.ac
-===================================================================
---- Python-3.4.2.orig/configure.ac
-+++ Python-3.4.2/configure.ac
-@@ -4434,7 +4434,7 @@ fi
- 
+diff --git a/configure.ac b/configure.ac
+index 2b8aa4d592..1f5bf4b4b0 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -4976,7 +4976,7 @@ fi
  # first curses header check
  ac_save_cppflags="$CPPFLAGS"
--CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
-+CPPFLAGS="$CPPFLAGS -I=/usr/include/ncursesw"
+ if test "$cross_compiling" = no; then
+-  CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
++  CPPFLAGS="$CPPFLAGS -I=/usr/include/ncursesw"
+ fi
  
  AC_CHECK_HEADERS(curses.h ncurses.h)
- 

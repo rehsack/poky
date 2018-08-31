@@ -5,13 +5,17 @@ Avoid a warning by not adding this module to missing variable.
 Upstream-Status: Inappropriate [distribution]
 
 Also simply disable the tk module since its not in DEPENDS.
+
+2018-08: Rebased for 3.7.0
+  -- Jens
+
 Signed-off-by: Andrei Gherzan <andrei@gherzan.ro>
 
-Index: Python-3.5.3/setup.py
-===================================================================
---- Python-3.5.3.orig/setup.py
-+++ Python-3.5.3/setup.py
-@@ -1558,10 +1558,12 @@ class PyBuildExt(build_ext):
+diff --git a/setup.py b/setup.py
+index 37c5dd58a6..0321245761 100644
+--- a/setup.py
++++ b/setup.py
+@@ -1608,10 +1608,12 @@ class PyBuildExt(build_ext):
          self.extensions.extend(exts)
  
          # Call the method for detecting whether _tkinter can be compiled
@@ -25,5 +29,5 @@ Index: Python-3.5.3/setup.py
 +        #if '_tkinter' not in [e.name for e in self.extensions]:
 +        #    missing.append('_tkinter')
  
- ##         # Uncomment these lines if you want to play with xxmodule.c
- ##         ext = Extension('xx', ['xxmodule.c'])
+         # Build the _uuid module if possible
+         uuid_incs = find_file("uuid.h", inc_dirs, ["/usr/include/uuid"])
