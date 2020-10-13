@@ -7,7 +7,7 @@ INIT_PYTHON=$(which python3 2>/dev/null )
 [ -z "$INIT_PYTHON" ] && echo "Error: The SDK needs a python installed" && exit 1
 
 # Remove invalid PATH elements first (maybe from a previously setup toolchain now deleted
-PATH=`$INIT_PYTHON -c 'import os; print(":".join(e for e in os.environ["PATH"].split(":") if os.path.exists(e)))'`
+PATH=$($INIT_PYTHON -c 'import os; print(":".join(e for e in os.environ["PATH"].split(":") if os.path.exists(e)))')
 
 tweakpath () {
     case ":${PATH}:" in
@@ -30,14 +30,14 @@ INST_GCC_VER=$(gcc --version 2>/dev/null | sed -ne 's/.* \([0-9]\+\.[0-9]\+\)\.[
 SDK_GCC_VER='@SDK_GCC_VER@'
 
 verlte () {
-	[  "$1" = "`printf "$1\n$2" | sort -V | head -n1`" ]
+	[  "$1" = "$(printf "$1\n$2" | sort -V | head -n1)" ]
 }
 
 verlt() {
 	[ "$1" = "$2" ] && return 1 || verlte $1 $2
 }
 
-verlt `uname -r` @OLDEST_KERNEL@
+verlt $(uname -r) @OLDEST_KERNEL@
 if [ $? = 0 ]; then
 	echo "Error: The SDK needs a kernel > @OLDEST_KERNEL@"
 	exit 1
@@ -178,9 +178,9 @@ if [ "$SDK_EXTENSIBLE" = "1" ]; then
 	# The build system doesn't work well with /tmp on NFS
 	fs_dev_path="$target_sdk_dir"
 	while [ ! -d "$fs_dev_path" ] ; do
-		fs_dev_path=`dirname $fs_dev_path`
+		fs_dev_path=$(dirname $fs_dev_path)
         done
-	fs_dev_type=`stat -f -c '%t' "$fs_dev_path"`
+	fs_dev_type=$(stat -f -c '%t' "$fs_dev_path")
 	if [ "$fsdevtype" = "6969" ] ; then
 		echo "The target directory path $target_sdk_dir is on NFS, this is not possible. Abort!"
 		exit 1
@@ -256,7 +256,7 @@ echo "done"
 printf "Setting it up..."
 # fix environment paths
 real_env_setup_script=""
-for env_setup_script in `ls $target_sdk_dir/environment-setup-*`; do
+for env_setup_script in $(ls $target_sdk_dir/environment-setup-*); do
 	if grep -q 'OECORE_NATIVE_SYSROOT=' $env_setup_script; then
 		# Handle custom env setup scripts that are only named
 		# environment-setup-* so that they have relocation
@@ -288,7 +288,7 @@ fi
 
 echo "SDK has been successfully set up and is ready to be used."
 echo "Each time you wish to use the SDK in a new shell session, you need to source the environment setup script e.g."
-for env_setup_script in `ls $target_sdk_dir/environment-setup-*`; do
+for env_setup_script in $(ls $target_sdk_dir/environment-setup-*); do
 	echo " \$ . $env_setup_script"
 done
 
