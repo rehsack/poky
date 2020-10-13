@@ -66,7 +66,7 @@ toolchain_create_tree_env_script () {
 	script=${TMPDIR}/environment-setup-${REAL_MULTIMACH_TARGET_SYS}
 	rm -f $script
 	touch $script
-	echo 'orig=`pwd`; cd ${COREBASE}; . ./oe-init-build-env ${TOPDIR}; cd $orig' >> $script
+	echo 'orig=$(pwd); cd ${COREBASE}; . ./oe-init-build-env ${TOPDIR}; cd $orig' >> $script
 	echo 'export PATH=${STAGING_DIR_NATIVE}/usr/bin:${STAGING_BINDIR_TOOLCHAIN}:$PATH' >> $script
 	echo 'export PKG_CONFIG_SYSROOT_DIR=${PKG_CONFIG_SYSROOT_DIR}' >> $script
 	echo 'export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}' >> $script
@@ -178,8 +178,8 @@ toolchain_create_sdk_siteconfig () {
 	for sitefile in ${TOOLCHAIN_NEED_CONFIGSITE_CACHE}; do
 		# Resolve virtual/* names to the real recipe name using sysroot-providers info
 		case $sitefile in virtual/*)
-			sitefile=`echo $sitefile | tr / _`
-			sitefile=`cat ${STAGING_DIR_TARGET}/sysroot-providers/$sitefile`
+			sitefile=$(echo $sitefile | tr / _)
+			sitefile=$(cat ${STAGING_DIR_TARGET}/sysroot-providers/$sitefile)
 		esac
 
 		if [ -r ${TOOLCHAIN_CONFIGSITE_SYSROOTCACHE}/${sitefile}_config ]; then

@@ -17,7 +17,7 @@ if [ "x$executable_files" = "x" ]; then
    exit 1
 fi
 
-tdir=`mktemp -d`
+tdir=$(mktemp -d)
 if [ x$tdir = x ] ; then
    echo "SDK relocate failed, could not create a temporary directory"
    exit 1
@@ -26,7 +26,7 @@ cat <<EOF >> $tdir/relocate_sdk.sh
 #!/bin/sh
 for py in python python2 python3
 do
-	PYTHON=\`which \${py} 2>/dev/null\`
+	PYTHON=\$(which \${py} 2>/dev/null)
 	if [ \$? -eq 0 ]; then
 		break;
 	fi
