@@ -28,18 +28,18 @@ class TestSDKExt(TestSDKBase):
         # We need the original PATH for testing the eSDK, not with our manipulations
         os.environ['PATH'] = d.getVar("BB_ORIGENV", False).getVar("PATH")
 
-        tcname = d.expand("${SDK_DEPLOY}/${TOOLCHAINEXT_OUTPUTNAME}.sh")
+        tcname = d.expand("${DEPLOY_DIR_SDK}/${TOOLCHAINEXT_OUTPUTNAME}.sh")
         if not os.path.exists(tcname):
             bb.fatal("The toolchain ext %s is not built. Build it before running the" \
                     " tests: 'bitbake <image> -c populate_sdk_ext' ." % tcname)
 
-        tdname = d.expand("${SDK_DEPLOY}/${TOOLCHAINEXT_OUTPUTNAME}.testdata.json")
+        tdname = d.expand("${DEPLOY_DIR_SDK}/${TOOLCHAINEXT_OUTPUTNAME}.testdata.json")
         test_data = json.load(open(tdname, "r"))
 
         target_pkg_manifest = OESDKExtTestContextExecutor._load_manifest(
-            d.expand("${SDK_DEPLOY}/${TOOLCHAINEXT_OUTPUTNAME}.target.manifest"))
+            d.expand("${DEPLOY_DIR_SDK}/${TOOLCHAINEXT_OUTPUTNAME}.target.manifest"))
         host_pkg_manifest = OESDKExtTestContextExecutor._load_manifest(
-            d.expand("${SDK_DEPLOY}/${TOOLCHAINEXT_OUTPUTNAME}.host.manifest"))
+            d.expand("${DEPLOY_DIR_SDK}/${TOOLCHAINEXT_OUTPUTNAME}.host.manifest"))
 
         sdk_dir = d.expand("${WORKDIR}/testsdkext/")
         bb.utils.remove(sdk_dir, True)

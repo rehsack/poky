@@ -122,7 +122,7 @@ def build_image_task(config, basepath, workspace, image, add_packages=None, task
                             afile.write('%s\n' % line)
 
             if task in ['populate_sdk', 'populate_sdk_ext']:
-                outputdir = rd.getVar('SDK_DEPLOY')
+                outputdir = rd.getVar('DEPLOY_DIR_SDK')
             else:
                 outputdir = rd.getVar('DEPLOY_DIR_IMAGE')
 

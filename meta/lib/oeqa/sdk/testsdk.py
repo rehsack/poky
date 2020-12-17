@@ -43,7 +43,7 @@ class TestSDK(TestSDKBase):
         """
         Get the name of the SDK file
         """
-        return d.expand("${SDK_DEPLOY}/${TOOLCHAIN_OUTPUTNAME}.sh")
+        return d.expand("${DEPLOY_DIR_SDK}/${TOOLCHAIN_OUTPUTNAME}.sh")
 
     def extract_sdk(self, tcname, sdk_dir, d):
         """
@@ -84,13 +84,13 @@ class TestSDK(TestSDKBase):
         if not os.path.exists(tcname):
             bb.fatal("The toolchain %s is not built. Build it before running the tests: 'bitbake <image> -c populate_sdk' ." % tcname)
 
-        tdname = d.expand("${SDK_DEPLOY}/${TOOLCHAIN_OUTPUTNAME}.testdata.json")
+        tdname = d.expand("${DEPLOY_DIR_SDK}/${TOOLCHAIN_OUTPUTNAME}.testdata.json")
         test_data = json.load(open(tdname, "r"))
 
         target_pkg_manifest = self.context_executor_class._load_manifest(
-            d.expand("${SDK_DEPLOY}/${TOOLCHAIN_OUTPUTNAME}.target.manifest"))
+            d.expand("${DEPLOY_DIR_SDK}/${TOOLCHAIN_OUTPUTNAME}.target.manifest"))
         host_pkg_manifest = self.context_executor_class._load_manifest(
-            d.expand("${SDK_DEPLOY}/${TOOLCHAIN_OUTPUTNAME}.host.manifest"))
+            d.expand("${DEPLOY_DIR_SDK}/${TOOLCHAIN_OUTPUTNAME}.host.manifest"))
 
         processes = d.getVar("TESTIMAGE_NUMBER_THREADS") or d.getVar("BB_NUMBER_THREADS")
         if processes:

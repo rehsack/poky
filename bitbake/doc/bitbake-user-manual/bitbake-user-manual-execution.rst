@@ -158,7 +158,7 @@ execution environment.
    Here is an example that causes BitBake to produce a parsing error: ::
 
       fakeroot create_shar() {
-         cat << "EOF" > ${SDK_DEPLOY}/${TOOLCHAIN_OUTPUTNAME}.sh
+         cat << "EOF" > ${DEPLOY_DIR_SDK}/${TOOLCHAIN_OUTPUTNAME}.sh
       usage()
       {
          echo "test"
@@ -169,7 +169,7 @@ execution environment.
 
       Writing the recipe this way avoids the error:
       fakeroot create_shar() {
-         cat << "EOF" > ${SDK_DEPLOY}/${TOOLCHAIN_OUTPUTNAME}.sh
+         cat << "EOF" > ${DEPLOY_DIR_SDK}/${TOOLCHAIN_OUTPUTNAME}.sh
       usage()
       {
          echo "test"

@@ -102,7 +102,7 @@ class Test4(BuildPerfTestCase):
         self.bb_vars = get_bb_vars(None, self.build_target)
         tmp_dir = self.bb_vars['TMPDIR']
         installer = os.path.join(
-            self.bb_vars['SDK_DEPLOY'],
+            self.bb_vars['DEPLOY_DIR_SDK'],
             self.bb_vars['TOOLCHAINEXT_OUTPUTNAME'] + '.sh')
         # Measure installer size
         self.measure_disk_usage(installer, 'installer_bin', 'eSDK installer',

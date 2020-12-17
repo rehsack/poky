@@ -84,7 +84,7 @@ class VerifyManifest(OESelftestTestCase):
         d_target= dict(target = self.buildtarget,
                          host = 'nativesdk-packagegroup-sdk-host')
         try:
-            mdir = self.get_dir_from_bb_var('SDK_DEPLOY', self.buildtarget)
+            mdir = self.get_dir_from_bb_var('DEPLOY_DIR_SDK', self.buildtarget)
             for k in d_target.keys():
                 toolchain_outputname = get_bb_var('TOOLCHAIN_OUTPUTNAME', self.buildtarget)
                 mfilename[k] = "{}.{}.manifest".format(toolchain_outputname, k)

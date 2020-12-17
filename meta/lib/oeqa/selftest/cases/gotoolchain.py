@@ -23,9 +23,9 @@ class oeGoToolchainSelfTest(OESelftestTestCase):
 
     @staticmethod
     def get_sdk_toolchain():
-        bb_vars = get_bb_vars(['SDK_DEPLOY', 'TOOLCHAIN_OUTPUTNAME'],
+        bb_vars = get_bb_vars(['DEPLOY_DIR_SDK', 'TOOLCHAIN_OUTPUTNAME'],
                               "meta-go-toolchain")
-        sdk_deploy = bb_vars['SDK_DEPLOY']
+        sdk_deploy = bb_vars['DEPLOY_DIR_SDK']
         toolchain_name = bb_vars['TOOLCHAIN_OUTPUTNAME']
         return os.path.join(sdk_deploy, toolchain_name + ".sh")
 
