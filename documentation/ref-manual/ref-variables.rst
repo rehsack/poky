@@ -1705,7 +1705,21 @@ system and gives an overview of their function and contents.
       deployed onto the target machine. The directory is machine-specific
       as it contains the ``${MACHINE}`` name. By default, this directory
       resides within the :term:`Build Directory` as
-      ``${DEPLOY_DIR}/images/${MACHINE}/``.
+      ``${DEPLOY_DIR_IMAGES}/${MACHINE}/``.
+
+      For more information on the structure of the Build Directory, see
+      ":ref:`ref-manual/ref-structure:the build directory - \`\`build/\`\``" section.
+      For more detail on the contents of the ``deploy`` directory, see the
+      ":ref:`Images <images-dev-environment>`" and
+      ":ref:`sdk-dev-environment`" sections both in
+      the Yocto Project Overview and Concepts Manual.
+
+   :term:`DEPLOY_DIR_IMAGES`
+      Points to the area that the OpenEmbedded build system uses to place
+      all machines images and other associated output files that are ready
+      to be deployed on each target machine.  The directory contains
+      machine-specific sub-folders.  By default, this directory resides
+      within the :term:`Build Directory` as ``${DEPLOY_DIR}/images/``.
 
       For more information on the structure of the Build Directory, see
       ":ref:`ref-manual/ref-structure:the build directory - \`\`build/\`\``" section.
@@ -1755,6 +1769,15 @@ system and gives an overview of their function and contents.
       on how packaging works, see the ":ref:`Package
       Feeds <package-feeds-dev-environment>`" section
       in the Yocto Project Overview and Concepts Manual.
+
+   :term:`DEPLOY_DIR_SDK`
+      The directory set up and used by the
+      :ref:`populate_sdk_base <ref-classes-populate-sdk>` class to which
+      the SDK is deployed.  The BitBake configuration file initially defines
+      this variable as a sub-folder of :term:`DEPLOY_DIR`:
+      ::
+
+         DEPLOY_DIR_SDK = "${DEPLOY_DIR}/sdk"
 
    :term:`DEPLOY_DIR_TAR`
       Points to the area that the OpenEmbedded build system uses to place
@@ -6455,7 +6478,12 @@ system and gives an overview of their function and contents.
       ``SDK_DEPLOY`` as follows:
       ::
 
-         SDK_DEPLOY = "${TMPDIR}/deploy/sdk"
+         SDK_DEPLOY = "${DEPLOY_DIR_SDK}"
+
+      .. note::
+
+         The ``SDK_DEPLOY`` variable is deprecated. Please use the
+         :term:`DEPLOY_DIR_SDK` variable.
 
    :term:`SDK_DIR`
       The parent directory used by the OpenEmbedded build system when
@@ -6469,7 +6497,7 @@ system and gives an overview of their function and contents.
       .. note::
 
          The ``SDK_DIR`` directory is a temporary directory as it is part of
-         ``WORKDIR``. The final output directory is :term:`SDK_DEPLOY`.
+         ``WORKDIR``. The final output directory is :term:`DEPLOY_DIR_SDK`.
 
    :term:`SDK_EXT_TYPE`
       Controls whether or not shared state artifacts are copied into the
@@ -6496,9 +6524,9 @@ system and gives an overview of their function and contents.
       defines the manifest file as follows:
       ::
 
-         SDK_HOST_MANIFEST = "${SDK_DEPLOY}/${TOOLCHAIN_OUTPUTNAME}.host.manifest"
+         SDK_HOST_MANIFEST = "${DEPLOY_DIR_SDK}/${TOOLCHAIN_OUTPUTNAME}.host.manifest"
 
-      The location is derived using the :term:`SDK_DEPLOY` and
+      The location is derived using the :term:`DEPLOY_DIR_SDK` and
       :term:`TOOLCHAIN_OUTPUTNAME` variables.
 
    :term:`SDK_INCLUDE_PKGDATA`
@@ -6613,13 +6641,13 @@ system and gives an overview of their function and contents.
 
          SDK_DIR = "${WORKDIR}/sdk"
          SDK_OUTPUT = "${SDK_DIR}/image"
-         SDK_DEPLOY = "${DEPLOY_DIR}/sdk"
+         DEPLOY_DIR_SDK = "${DEPLOY_DIR}/sdk"
 
       .. note::
 
          The ``SDK_OUTPUT`` directory is a temporary directory as it is part of
          :term:`WORKDIR` by way of :term:`SDK_DIR`. The final output directory is
-         :term:`SDK_DEPLOY`.
+         :term:`DEPLOY_DIR_SDK`.
 
    :term:`SDK_PACKAGE_ARCHS`
       Specifies a list of architectures compatible with the SDK machine.
@@ -6683,9 +6711,9 @@ system and gives an overview of their function and contents.
       defines the manifest file as follows:
       ::
 
-         SDK_TARGET_MANIFEST = "${SDK_DEPLOY}/${TOOLCHAIN_OUTPUTNAME}.target.manifest"
+         SDK_TARGET_MANIFEST = "${DEPLOY_DIR_SDK}/${TOOLCHAIN_OUTPUTNAME}.target.manifest"
 
-      The location is derived using the :term:`SDK_DEPLOY` and
+      The location is derived using the :term:`DEPLOY_DIR_SDK` and
       :term:`TOOLCHAIN_OUTPUTNAME` variables.
 
    :term:`SDK_TARGETS`

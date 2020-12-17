@@ -150,7 +150,7 @@ def copy_needed_files(d, tc):
 
     # Copy SDK
     if d.getVar("TEST_EXPORT_SDK_ENABLED") == "1":
-        sdk_deploy = d.getVar("SDK_DEPLOY")
+        sdk_deploy = d.getVar("DEPLOY_DIR_SDK")
         tarball_name = "%s.sh" % d.getVar("TEST_EXPORT_SDK_NAME")
         tarball_path = os.path.join(sdk_deploy, tarball_name)
         export_sdk_dir = os.path.join(d.getVar("TEST_EXPORT_DIR"),

@@ -103,7 +103,7 @@ class SdkUpdateTest(OESDKExtTestCase):
             shutil.rmtree(self.publish_dir)
         os.mkdir(self.publish_dir)
 
-        base_tcname = "%s/%s" % (self.td.get("SDK_DEPLOY", ''),
+        base_tcname = "%s/%s" % (self.td.get("DEPLOY_DIR_SDK", ''),
             self.td.get("TOOLCHAINEXT_OUTPUTNAME", ''))
         tcname_new = "%s-new.sh" % base_tcname
         if not os.path.exists(tcname_new):

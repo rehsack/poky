@@ -46,8 +46,8 @@ class oeSDKExtSelfTest(OESelftestTestCase):
     def get_eSDK_toolchain(image):
         pn_task = '%s -c populate_sdk_ext' % image
 
-        bb_vars = get_bb_vars(['SDK_DEPLOY', 'TOOLCHAINEXT_OUTPUTNAME'], pn_task)
-        sdk_deploy = bb_vars['SDK_DEPLOY']
+        bb_vars = get_bb_vars(['DEPLOY_DIR_SDK', 'TOOLCHAINEXT_OUTPUTNAME'], pn_task)
+        sdk_deploy = bb_vars['DEPLOY_DIR_SDK']
         toolchain_name = bb_vars['TOOLCHAINEXT_OUTPUTNAME']
         return os.path.join(sdk_deploy, toolchain_name + '.sh')
 
