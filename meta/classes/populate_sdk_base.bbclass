@@ -33,7 +33,7 @@ inherit rootfs_${IMAGE_PKGTYPE}
 
 SDK_DIR = "${WORKDIR}/sdk"
 SDK_OUTPUT = "${SDK_DIR}/image"
-SDK_DEPLOY = "${DEPLOY_DIR}/sdk"
+SDK_DEPLOY = "${DEPLOY_DIR_SDK}"
 
 SDKDEPLOYDIR = "${WORKDIR}/${SDKMACHINE}-deploy-${PN}-populate-sdk"
 
@@ -87,8 +87,8 @@ SDK_TITLE ??= "${@d.getVar('DISTRO_NAME') or d.getVar('DISTRO')} SDK"
 
 SDK_TARGET_MANIFEST = "${SDKDEPLOYDIR}/${TOOLCHAIN_OUTPUTNAME}.target.manifest"
 SDK_HOST_MANIFEST = "${SDKDEPLOYDIR}/${TOOLCHAIN_OUTPUTNAME}.host.manifest"
-SDK_EXT_TARGET_MANIFEST = "${SDK_DEPLOY}/${TOOLCHAINEXT_OUTPUTNAME}.target.manifest"
-SDK_EXT_HOST_MANIFEST = "${SDK_DEPLOY}/${TOOLCHAINEXT_OUTPUTNAME}.host.manifest"
+SDK_EXT_TARGET_MANIFEST = "${DEPLOY_DIR_SDK}/${TOOLCHAINEXT_OUTPUTNAME}.target.manifest"
+SDK_EXT_HOST_MANIFEST = "${DEPLOY_DIR_SDK}/${TOOLCHAINEXT_OUTPUTNAME}.host.manifest"
 
 python write_target_sdk_manifest () {
     from oe.sdk import sdk_list_installed_packages
@@ -175,7 +175,7 @@ SSTATETASKS += "do_populate_sdk"
 SSTATE_SKIP_CREATION_task-populate-sdk = '1'
 do_populate_sdk[cleandirs] = "${SDKDEPLOYDIR}"
 do_populate_sdk[sstate-inputdirs] = "${SDKDEPLOYDIR}"
-do_populate_sdk[sstate-outputdirs] = "${SDK_DEPLOY}"
+do_populate_sdk[sstate-outputdirs] = "${DEPLOY_DIR_SDK}"
 do_populate_sdk[stamp-extra-info] = "${MACHINE_ARCH}${SDKMACHINE}"
 
 PSEUDO_IGNORE_PATHS .= ",${SDKDEPLOYDIR}"

@@ -83,8 +83,8 @@ B_task-populate-sdk-ext = "${SDK_DIR}"
 TOOLCHAINEXT_OUTPUTNAME ?= "${SDK_NAME}-toolchain-ext-${SDK_VERSION}"
 TOOLCHAIN_OUTPUTNAME_task-populate-sdk-ext = "${TOOLCHAINEXT_OUTPUTNAME}"
 
-SDK_EXT_TARGET_MANIFEST = "${SDK_DEPLOY}/${TOOLCHAINEXT_OUTPUTNAME}.target.manifest"
-SDK_EXT_HOST_MANIFEST = "${SDK_DEPLOY}/${TOOLCHAINEXT_OUTPUTNAME}.host.manifest"
+SDK_EXT_TARGET_MANIFEST = "${DEPLOY_DIR_SDK}/${TOOLCHAINEXT_OUTPUTNAME}.target.manifest"
+SDK_EXT_HOST_MANIFEST = "${DEPLOY_DIR_SDK}/${TOOLCHAINEXT_OUTPUTNAME}.host.manifest"
 
 python write_target_sdk_ext_manifest () {
     from oe.sdk import get_extra_sdkinfo
@@ -545,7 +545,7 @@ python copy_buildsystem () {
 def get_current_buildtools(d):
     """Get the file name of the current buildtools installer"""
     import glob
-    btfiles = glob.glob(os.path.join(d.getVar('SDK_DEPLOY'), '*-buildtools-nativesdk-standalone-*.sh'))
+    btfiles = glob.glob(os.path.join(d.getVar('DEPLOY_DIR_SDK'), '*-buildtools-nativesdk-standalone-*.sh'))
     btfiles.sort(key=os.path.getctime)
     return os.path.basename(btfiles[-1])
 
@@ -555,7 +555,7 @@ def get_sdk_required_utilities(buildtools_fn, d):
     sanity_required_utilities.append(d.expand('${BUILD_PREFIX}gcc'))
     sanity_required_utilities.append(d.expand('${BUILD_PREFIX}g++'))
     if buildtools_fn:
-        buildtools_installer = os.path.join(d.getVar('SDK_DEPLOY'), buildtools_fn)
+        buildtools_installer = os.path.join(d.getVar('DEPLOY_DIR_SDK'), buildtools_fn)
         filelist, _ = bb.process.run('%s -l' % buildtools_installer)
     else:
         buildtools_installer = None
@@ -603,7 +603,7 @@ install_tools() {
 
 	# find latest buildtools-tarball and install it
 	if [ -n "${SDK_BUILDTOOLS_INSTALLER}" ]; then
-		install ${SDK_DEPLOY}/${SDK_BUILDTOOLS_INSTALLER} ${SDK_OUTPUT}/${SDKPATH}
+		install ${DEPLOY_DIR_SDK}/${SDK_BUILDTOOLS_INSTALLER} ${SDK_OUTPUT}/${SDKPATH}
 	fi
 
 	install -m 0644 ${COREBASE}/meta/files/ext-sdk-prepare.py ${SDK_OUTPUT}/${SDKPATH}
@@ -790,7 +790,7 @@ SSTATETASKS += "do_populate_sdk_ext"
 SSTATE_SKIP_CREATION_task-populate-sdk-ext = '1'
 do_populate_sdk_ext[cleandirs] = "${SDKEXTDEPLOYDIR}"
 do_populate_sdk_ext[sstate-inputdirs] = "${SDKEXTDEPLOYDIR}"
-do_populate_sdk_ext[sstate-outputdirs] = "${SDK_DEPLOY}"
+do_populate_sdk_ext[sstate-outputdirs] = "${DEPLOY_DIR_SDK}"
 do_populate_sdk_ext[stamp-extra-info] = "${MACHINE_ARCH}"
 
 addtask populate_sdk_ext after do_sdk_depends
