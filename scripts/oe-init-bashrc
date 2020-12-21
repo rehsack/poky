@@ -132,9 +132,11 @@ __oe_guess_repos () {
 __oe_bb_var () {
     set -e
     if [ -n "${BUILDDIR}" -a -d "${BUILDDIR}/.git" ]; then
-	pushd "${BUILDDIR}" >/dev/null
-	bitbake -e ${VAR_RECIPE} 2>&1 | egrep "^($@)="
-	popd >/dev/null
+        pushd "${BUILDDIR}" >/dev/null
+
+        : ${BITBAKE_CMD:="bitbake"}
+        ${BITBAKE_CMD} -e ${VAR_RECIPE} 2>&1 | egrep "^($@)="
+        popd >/dev/null
     fi
 }
 
